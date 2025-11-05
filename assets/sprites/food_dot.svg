@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Small food pellet -->
+  <circle cx="32" cy="32" r="6" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1"/>
+  <circle cx="29" cy="29" r="1.2" fill="#FFF9C4" opacity="0.9"/>
+</svg>
