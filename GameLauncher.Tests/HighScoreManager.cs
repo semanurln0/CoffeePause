@@ -1,34 +1,35 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text.Json;
 
-namespace CoffeePause;
+namespace CoffeePause.Tests;
 
+// Copy of HighScoreManager for testing
 public class HighScoreManager
 {
-    private static readonly string ScoresDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "CoffeePause");
-
+    public string ScoresDir { get; set; }
     private Dictionary<string, List<ScoreEntry>> _scores = new();
 
-    private static HighScoreManager? _instance;
-    public static HighScoreManager Instance
+    public HighScoreManager(string scoresDir)
     {
-        get
-        {
-            if (_instance == null)
-            {
-                _instance = new HighScoreManager();
-                _instance.LoadAll();
-            }
-            return _instance;
-        }
+        ScoresDir = scoresDir;
+        LoadAll();
     }
 
     public void AddScore(string gameName, int score, TimeSpan time, string playerName = "Player")
     {
-        if (!_scores.ContainsKey(gameName)) _scores[gameName] = new List<ScoreEntry>();
+        if (!_scores.ContainsKey(gameName)) 
+            _scores[gameName] = new List<ScoreEntry>();
 
-        _scores[gameName].Add(new ScoreEntry { PlayerName = playerName, Score = score, Time = time, Date = DateTime.Now });
+        _scores[gameName].Add(new ScoreEntry 
+        { 
+            PlayerName = playerName, 
+            Score = score, 
+            Time = time, 
+            Date = DateTime.Now 
+        });
 
         _scores[gameName] = _scores[gameName]
             .OrderByDescending(s => s.Score)
@@ -59,8 +60,10 @@ public class HighScoreManager
             var tmp = path + ".tmp";
             var json = JsonSerializer.Serialize(_scores[gameName], new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(tmp, json);
-            if (File.Exists(path)) File.Replace(tmp, path, null);
-            else File.Move(tmp, path);
+            if (File.Exists(path)) 
+                File.Replace(tmp, path, null);
+            else 
+                File.Move(tmp, path);
         }
         catch (Exception ex)
         {
