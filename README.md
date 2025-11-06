@@ -82,6 +82,15 @@ dotnet build CoffeePause.sln
 dotnet run --project GameLauncher/GameLauncher.csproj
 ```
 
+### Running Tests
+
+```bash
+# Run all tests (Windows only - requires Windows Desktop runtime)
+dotnet test tests/GameLauncher.Tests/GameLauncher.Tests.csproj
+```
+
+**Note**: Tests require Windows Desktop runtime and will not run on Linux/macOS build servers.
+
 ### Creating a Self-Contained Executable
 
 If you want to run the application without installing .NET:
@@ -103,11 +112,25 @@ CoffeePause/
 │   ├── SudokuForm.cs              # Sudoku game
 │   ├── MinesweeperForm.cs         # Minesweeper game
 │   └── SpiderSolitaireForm.cs     # Spider Solitaire game
+├── tests/
+│   └── GameLauncher.Tests/
+│       └── HighScoreManagerTests.cs  # Score persistence tests
 ├── assets/
 │   └── sprites/                   # SVG and image assets
+├── publish/                       # Published executable (ignored by git)
 ├── CoffeePause.sln                # Solution file
+├── Build.bat                      # Build automation script
+├── CreateShortcut.ps1             # Shortcut creator script
+├── RunCoffeePause.bat             # Quick launch script
 └── README.md                      # This file
 ```
+
+## Testing
+
+The project includes unit tests for core functionality:
+- **HighScoreManager**: Score persistence, atomic saves, top-10 tracking
+- Tests are located in `tests/GameLauncher.Tests/`
+- Run tests on Windows with: `dotnet test`
 
 ## Controls
 
