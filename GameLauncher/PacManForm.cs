@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace CoffeePause;
@@ -199,19 +202,57 @@ public class PacManForm : Form
 
     private void GameOver()
     {
-        gameRunning = false; gameTimer.Stop(); ShowGameOverPanel($"Game Over!\nScore: {{score}}\nTime: {{DateTime.Now - startTime:mm\:ss}}");
+        gameRunning = false; gameTimer.Stop();
+        var elapsed = DateTime.Now - startTime;
+        ShowGameOverPanel($"Game Over!\nScore: {score}\nTime: {elapsed.ToString(@"mm\\:ss")}");
     }
 
     private void ShowGameOverPanel(string text)
     {
-        var panel = new Panel { Size = new Size(this.ClientSize.Width - 40, 160), Location = new Point(20, (this.ClientSize.Height - 160) / 2), BackColor = Color.FromArgb(220, 30, 30, 30) };
-        var label = new Label { Text = text, ForeColor = Color.White, Font = new Font("Arial", 14, FontStyle.Bold), AutoSize = false, Size = new Size(panel.Width - 20, 60), Location = new Point(10, 10) }; panel.Controls.Add(label);
-        var retryBtn = new Button { Text = "Retry", Size = new Size(120, 40), Location = new Point((panel.Width / 2) - 130, 80) };
-        retryBtn.Click += (s, e) => { this.Controls.Remove(panel); InitializeGame(); gameTimer.Start(); };
+        var panel = new Panel
+        {
+            Size = new Size(this.ClientSize.Width - 40, 160),
+            Location = new Point(20, (this.ClientSize.Height - 160) / 2),
+            BackColor = Color.FromArgb(220, 30, 30, 30)
+        };
+
+        var label = new Label
+        {
+            Text = text,
+            ForeColor = Color.White,
+            Font = new Font("Arial", 14, FontStyle.Bold),
+            AutoSize = false,
+            Size = new Size(panel.Width - 20, 60),
+            Location = new Point(10, 10),
+            TextAlign = ContentAlignment.MiddleCenter
+        };
+        panel.Controls.Add(label);
+
+        var retryBtn = new Button
+        {
+            Text = "Retry",
+            Size = new Size(120, 40),
+            Location = new Point((panel.Width / 2) - 130, 80)
+        };
+        retryBtn.Click += (s, e) =>
+        {
+            this.Controls.Remove(panel);
+            InitializeGame();
+            gameTimer.Start();
+        };
         panel.Controls.Add(retryBtn);
-        var exitBtn = new Button { Text = "Exit", Size = new Size(120, 40), Location = new Point((panel.Width / 2) + 10, 80) };
-        exitBtn.Click += (s, e) => this.Close(); panel.Controls.Add(exitBtn);
-        this.Controls.Add(panel); panel.BringToFront();
+
+        var exitBtn = new Button
+        {
+            Text = "Exit",
+            Size = new Size(120, 40),
+            Location = new Point((panel.Width / 2) + 10, 80)
+        };
+        exitBtn.Click += (s, e) => this.Close();
+        panel.Controls.Add(exitBtn);
+
+        this.Controls.Add(panel);
+        panel.BringToFront();
     }
 
     private void GameTimer_Tick(object? sender, EventArgs e)
@@ -220,7 +261,7 @@ public class PacManForm : Form
         ghostMoveCounter++;
         if (ghostMoveCounter >= 2) { MoveGhosts(); CheckGhostCollision(); ghostMoveCounter = 0; }
         if (powerTicksLeft > 0) { powerTicksLeft--; if (powerTicksLeft == 0) foreach (var g in ghosts) g.IsVulnerable = false; }
-        if (CheckWin()) { gameRunning = false; gameTimer.Stop(); var elapsed = DateTime.Now - startTime; HighScoreManager.Instance.AddScore("Pac-Man", score, elapsed); ShowGameOverPanel($"Congratulations! You collected all the dots!\nScore: {{score}}\nTime: {{elapsed:mm\:ss}}"); }
+        if (CheckWin()) { gameRunning = false; gameTimer.Stop(); var elapsed = DateTime.Now - startTime; HighScoreManager.Instance.AddScore("Pac-Man", score, elapsed); ShowGameOverPanel($"Congratulations! You collected all the dots!\nScore: {score}\nTime: {elapsed.ToString(@"mm\\:ss")}"); }
         this.Invalidate();
     }
 
@@ -234,23 +275,26 @@ public class PacManForm : Form
     {
         var g = e.Graphics; g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
         // Draw score (black text)
-        g.DrawString($"Score: {{score}}", new Font("Arial", 14, FontStyle.Bold), Brushes.Black, new PointF(10, 10));
+        g.DrawString($"Score: {score}", new Font("Arial", 14, FontStyle.Bold), Brushes.Black, new PointF(10, 10));
         g.DrawString("Controls: W/A/S/D to move, P to pause, ESC to exit", new Font("Arial", 10), Brushes.Black, new PointF(10, 35));
         // Draw maze
-        for (int y = 0; y < 10; y++) for (int x = 0; x < 20; x++)
+        for (int y = 0; y < 10; y++)
         {
-            int drawX = x * CellSize; int drawY = 60 + y * CellSize;
-            switch (maze[y, x])
+            for (int x = 0; x < 20; x++)
             {
-                case '#': g.FillRectangle(Brushes.Blue, drawX, drawY, CellSize, CellSize); break;
-                case '.': g.FillEllipse(new SolidBrush(ColorTranslator.FromHtml("#0083b4"), drawX + CellSize/2 - 3, drawY + CellSize/2 - 3, 6, 6); break;
-                case 'o': if (_powerImage != null) g.DrawImage(_powerImage, new Rectangle(drawX + 4, drawY + 4, CellSize - 8, CellSize - 8)); else g.FillEllipse(Brushes.Pink, drawX + 6, drawY + 6, CellSize - 12, CellSize - 12); break;
+                int drawX = x * CellSize; int drawY = 60 + y * CellSize;
+                switch (maze[y, x])
+                {
+                    case '#': g.FillRectangle(Brushes.Blue, drawX, drawY, CellSize, CellSize); break;
+                    case '.': using (var dotBrush = new SolidBrush(ColorTranslator.FromHtml("#0083b4"))) { g.FillEllipse(dotBrush, drawX + CellSize/2 - 3, drawY + CellSize/2 - 3, 6, 6); } break;
+                    case 'o': if (_powerImage != null) g.DrawImage(_powerImage, new Rectangle(drawX + 4, drawY + 4, CellSize - 8, CellSize - 8)); else g.FillEllipse(Brushes.Pink, drawX + 6, drawY + 6, CellSize - 12, CellSize - 12); break;
+                }
             }
         }
         // draw ghosts
         foreach (var ghost in ghosts) { int drawX = ghost.X * CellSize; int drawY = 60 + ghost.Y * CellSize; var drawColor = ghost.IsVulnerable ? Color.LightBlue : ghost.Color; using (var brush = new SolidBrush(drawColor)) { g.FillEllipse(brush, drawX + 2, drawY, CellSize - 4, CellSize - 4); g.FillRectangle(brush, drawX + 2, drawY + CellSize/2, CellSize - 4, CellSize/2); g.FillEllipse(Brushes.White, drawX + 6, drawY + 8, 7, 7); g.FillEllipse(Brushes.White, drawX + 17, drawY + 8, 7, 7); g.FillEllipse(Brushes.Black, drawX + 8, drawY + 10, 3, 3); g.FillEllipse(Brushes.Black, drawX + 19, drawY + 10, 3, 3); } }
         // draw pacman
-        int pacDrawX = pacManX * CellSize; int pacDrawY = 60 + pacManY * CellSize; g.FillEllipse(Brushes.Yellow, pacDrawX + 2, pacDrawY + 2, CellSize - 4, CellSize - 4); g.FillPie(Brushes.Black, pacDrawX + 2, pacDrawY + 2, CellSize - 4, CellSize - 4, 30, 60);
-        if (isPaused) { var overlay = new SolidBrush(Color.FromArgb(160, 0, 0, 0)); g.FillRectangle(overlay, 0, 0, this.ClientSize.Width, this.ClientSize.Height); g.DrawString("PAUSED", new Font("Arial", 36, FontStyle.Bold), Brushes.White, new PointF(this.ClientSize.Width/2 - 80, this.ClientSize.Height/2 - 30)); }
+        int pacDrawX = pacManX * CellSize; int pacDrawY = 60 + pacManY * CellSize; g.FillEllipse(Brushes.Yellow, pacDrawX + 2, pacDrawY + 2, CellSize - 4, pacDrawY - 4); g.FillPie(Brushes.Black, pacDrawX + 2, pacDrawY + 2, CellSize - 4, pacDrawY - 4, 30, 60);
+        if (isPaused) { using (var overlay = new SolidBrush(Color.FromArgb(160, 0, 0, 0))) { g.FillRectangle(overlay, 0, 0, this.ClientSize.Width, this.ClientSize.Height); } g.DrawString("PAUSED", new Font("Arial", 36, FontStyle.Bold), Brushes.White, new PointF(this.ClientSize.Width / 2 - 80, this.ClientSize.Height / 2 - 30)); }
     }
 }
