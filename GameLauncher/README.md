@@ -1,6 +1,6 @@
 # CoffeePause - GameLauncher
 
-A collection of classic games built with Windows Forms (.NET 8.0).
+A collection of classic games built with Windows Forms (.NET 9.0).
 
 ## Games Included
 
@@ -12,7 +12,7 @@ A collection of classic games built with Windows Forms (.NET 8.0).
 ## Building the Project
 
 ### Prerequisites
-- .NET 8.0 SDK or later
+- .NET 9.0 SDK or later
 - Windows operating system (for running the application)
 
 ### Build Commands
@@ -86,7 +86,7 @@ Each game maintains its own high score file with the top 10 scores.
 ## Development
 
 ### Framework
-- Target Framework: `net8.0-windows`
+- Target Framework: `net9.0-windows`
 - UI Framework: Windows Forms
 - Package Dependencies:
   - `Svg` (v3.3.0) - For SVG image rendering
@@ -109,7 +109,7 @@ GameLauncher/
 
 ## Notes
 
-- The project was upgraded from net7.0-windows to net8.0-windows to resolve SDK compatibility issues
+- The project was upgraded from net7.0-windows to net9.0-windows to resolve SDK compatibility issues
 - `EnableWindowsTargeting` is enabled to support cross-platform builds
 - All compile errors (CS1009, CS1026) have been resolved
 - String interpolation bugs in HighScoreManager have been fixed

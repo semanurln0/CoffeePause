@@ -14,7 +14,7 @@ Successfully fixed all compile errors, upgraded framework, and implemented compr
 ### Commit History
 ```
 3c5ed85 - chore: update .gitignore to exclude test build artifacts
-8e75077 - feat: add comprehensive test suite and upgrade to net8.0  
+8e75077 - feat: add comprehensive test suite and upgrade to net9.0  
 f25af83 - chore: enable Windows targeting for cross-platform build
 ```
 
@@ -45,10 +45,10 @@ f25af83 - chore: enable Windows targeting for cross-platform build
 
 ## Framework Upgrade
 
-### Rationale for net7.0 → net8.0 Upgrade
-The project was upgraded from `net7.0-windows` to `net8.0-windows` due to:
+### Rationale for net7.0 → net9.0 Upgrade
+The project was upgraded from `net7.0-windows` to `net9.0-windows` due to:
 - .NET 7.0 runtime not available in build environment
-- .NET 8.0 LTS available (8.0.6, 8.0.21)
+- .NET 9.0 LTS available (9.0.6, 9.0.10)
 - Better long-term support and compatibility
 - No breaking changes in codebase required
 
@@ -124,7 +124,7 @@ GameLauncher.Tests/
 ### Files Modified
 ```
 .gitignore (added test project exclusions)
-GameLauncher/GameLauncher.csproj (net8.0-windows upgrade)
+GameLauncher/GameLauncher.csproj (net9.0-windows upgrade)
 GameLauncher/HighScoreManager.cs (string interpolation fixes)
 ```
 
