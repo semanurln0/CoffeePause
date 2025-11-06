@@ -75,7 +75,15 @@ public class SpiderSolitaireForm : Form
         var suitsLabel = new Label { Text = "Suits:", Location = new Point(760, 15), Size = new Size(40, 20) };
         this.Controls.Add(suitsLabel);
         var suitsCombo = new ComboBox { Location = new Point(800, 10), Size = new Size(80, 30), DropDownStyle = ComboBoxStyle.DropDownList };
-        suitsCombo.Items.AddRange(new object[] { "1", "2", "4" }); suitsCombo.SelectedIndex = 0; suitsCombo.SelectedIndexChanged += (s, e) => { suitCount = int.Parse((string)suitsCombo.SelectedItem); InitializeGame(); };
+        suitsCombo.Items.AddRange(new object[] { "1", "2", "4" }); 
+        suitsCombo.SelectedIndex = 0; 
+        suitsCombo.SelectedIndexChanged += (s, e) => { 
+            if (suitsCombo.SelectedItem != null) 
+            { 
+                suitCount = int.Parse(suitsCombo.SelectedItem.ToString()!); 
+                InitializeGame(); 
+            } 
+        };
         this.Controls.Add(suitsCombo);
     }
 
@@ -133,7 +141,7 @@ public class SpiderSolitaireForm : Form
 
     private void CheckWin() { if (columns.All(c => c.Count==0) && deck.Count==0) { var elapsed = DateTime.Now - startTime; HighScoreManager.Instance.AddScore("Spider Solitaire", score, elapsed); var result = MessageBox.Show($"Congratulations! You won!\nScore: {score}\nMoves: {moves}\nTime: {elapsed:mm\\:ss}\n\nPlay again?", "Victory!", MessageBoxButtons.YesNo, MessageBoxIcon.Information); if (result==DialogResult.Yes) { columns.Clear(); deck.Clear(); InitializeGame(); this.Invalidate(); } else this.Close(); } }
 
-    private void SpiderSolitaireForm_Paint(object? sender, PaintEventArgs e) { var g = e.Graphics; for (int col=0; col<7; col++) { int x = col * (CardWidth + 20) + 10; int y = 60; g.DrawRectangle(Pens.Gray, x, y, CardWidth, CardHeight); for (int i=0;i<columns[col].Count;i++) { var card = columns[col][i]; int cardY = y + i * CardSpacing; bool isSelected = false; var fillBrush = Brushes.White; g.FillRectangle(fillBrush, x, cardY, CardWidth, CardHeight); g.DrawRectangle(Pens.Black, x, cardY, CardWidth, CardHeight); var color = (card.Suit=="♥"||card.Suit=="♦")? Brushes.Red: Brushes.Black; g.DrawString($"{card.Value}{card.Suit}", new Font("Arial",12,FontStyle.Bold), color, x+5, cardY+5); } }
+    private void SpiderSolitaireForm_Paint(object? sender, PaintEventArgs e) { var g = e.Graphics; for (int col=0; col<7; col++) { int x = col * (CardWidth + 20) + 10; int y = 60; g.DrawRectangle(Pens.Gray, x, y, CardWidth, CardHeight); for (int i=0;i<columns[col].Count;i++) { var card = columns[col][i]; int cardY = y + i * CardSpacing; var fillBrush = Brushes.White; g.FillRectangle(fillBrush, x, cardY, CardWidth, CardHeight); g.DrawRectangle(Pens.Black, x, cardY, CardWidth, CardHeight); var color = (card.Suit=="♥"||card.Suit=="♦")? Brushes.Red: Brushes.Black; g.DrawString($"{card.Value}{card.Suit}", new Font("Arial",12,FontStyle.Bold), color, x+5, cardY+5); } }
     if (isDragging && dragCards.Count>0) { var drawX = currentMousePos.X - dragOffset.X; var drawY = currentMousePos.Y - dragOffset.Y; for (int i=0;i<dragCards.Count;i++) { var c = dragCards[i]; var r = new Rectangle(drawX, drawY + i*CardSpacing, CardWidth, CardHeight); g.FillRectangle(Brushes.White, r); g.DrawRectangle(Pens.Black, r); var color = (c.Suit=="♥"||c.Suit=="♦")? Brushes.Red: Brushes.Black; g.DrawString($"{c.Value}{c.Suit}", new Font("Arial",12,FontStyle.Bold), color, r.X+5, r.Y+5); } }
         if (currentHint.HasValue) { var h=currentHint.Value; int hx = h.fromCol * (CardWidth + 20) + 10; int hy = 60 + h.fromIndex * CardSpacing; g.DrawRectangle(new Pen(Color.Lime,3), hx, hy, CardWidth, CardHeight + (dragCards.Count-1)*CardSpacing); }
         g.DrawString("Drag cards to move. Right-click + numpad = draft on Sudoku; Hint shows one move. Undo available (5).", new Font("Arial",9), Brushes.White, new PointF(10, 640)); }

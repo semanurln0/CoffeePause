@@ -32,8 +32,14 @@ public class AssetManager
 
         try
         {
-            var path = Path.Combine(AssetsPath, filename);
-            if (File.Exists(path))
+            // Try sprites subfolder first, then root assets
+            var spritesPath = Path.Combine(AssetsPath, "sprites", filename);
+            var directPath = Path.Combine(AssetsPath, filename);
+            
+            var path = File.Exists(spritesPath) ? spritesPath : 
+                       File.Exists(directPath) ? directPath : null;
+            
+            if (path != null)
             {
                 var ext = Path.GetExtension(path).ToLowerInvariant();
                 if (ext == ".svg")
@@ -51,10 +57,21 @@ public class AssetManager
                 return image;
             }
 
-            // fallback: try same filename with png/jpg
-            var noExt = Path.Combine(AssetsPath, Path.GetFileNameWithoutExtension(filename));
-            var pngPath = noExt + ".png";
-            var jpgPath = noExt + ".jpg";
+            // fallback: try same filename with png/jpg in sprites folder
+            var baseName = Path.GetFileNameWithoutExtension(filename);
+            var spritesBase = Path.Combine(AssetsPath, "sprites", baseName);
+            var pngPath = spritesBase + ".png";
+            var jpgPath = spritesBase + ".jpg";
+            var svgPath = spritesBase + ".svg";
+            
+            if (File.Exists(svgPath))
+            {
+                var doc = SvgDocument.Open(svgPath);
+                var bmp = new Bitmap((int)Math.Max(1, doc.Width.Value), (int)Math.Max(1, doc.Height.Value));
+                doc.Draw(bmp);
+                _imageCache[filename] = bmp;
+                return bmp;
+            }
             if (File.Exists(pngPath))
             {
                 var image = Image.FromFile(pngPath);
@@ -72,6 +89,16 @@ public class AssetManager
             var files = Directory.GetFiles(AssetsPath, "*" + Path.GetFileName(filename), SearchOption.AllDirectories);
             if (files.Length > 0)
             {
+                var ext = Path.GetExtension(files[0]).ToLowerInvariant();
+                if (ext == ".svg")
+                {
+                    var doc = SvgDocument.Open(files[0]);
+                    var bmp = new Bitmap((int)Math.Max(1, doc.Width.Value), (int)Math.Max(1, doc.Height.Value));
+                    doc.Draw(bmp);
+                    _imageCache[filename] = bmp;
+                    return bmp;
+                }
+                
                 var image = Image.FromFile(files[0]);
                 _imageCache[filename] = image;
                 return image;
@@ -99,7 +126,7 @@ public class AssetManager
     {
         // cardName expected like A♠ or K♥ — sanitize for filenames
         var safe = cardName.Replace("♠", "S").Replace("♣", "C").Replace("♥", "H").Replace("♦", "D");
-        return LoadImage($"cards/{{safe}}.svg") ?? LoadImage($"cards/{{safe}}.png") ?? LoadImage($"cards/{{safe}}.jpg");
+        return LoadImage($"cards/{safe}.svg") ?? LoadImage($"cards/{safe}.png") ?? LoadImage($"cards/{safe}.jpg");
     }
 
     public void Dispose()
