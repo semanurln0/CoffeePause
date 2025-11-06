@@ -4,10 +4,9 @@ namespace CoffeePause;
 
 public class HighScoreManager
 {
-    private static readonly string ScoresPath = Path.Combine(
+    private static readonly string ScoresDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "CoffeePause",
-        "highscores.json");
+        "CoffeePause");
 
     private Dictionary<string, List<ScoreEntry>> _scores = new();
 
@@ -19,7 +18,7 @@ public class HighScoreManager
             if (_instance == null)
             {
                 _instance = new HighScoreManager();
-                _instance.Load();
+                _instance.LoadAll();
             }
             return _instance;
         }
@@ -27,64 +26,69 @@ public class HighScoreManager
 
     public void AddScore(string gameName, int score, TimeSpan time, string playerName = "Player")
     {
-        if (!_scores.ContainsKey(gameName))
-        {
-            _scores[gameName] = new List<ScoreEntry>();
-        }
+        if (!_scores.ContainsKey(gameName)) _scores[gameName] = new List<ScoreEntry>();
 
-        _scores[gameName].Add(new ScoreEntry
-        {
-            PlayerName = playerName,
-            Score = score,
-            Time = time,
-            Date = DateTime.Now
-        });
+        _scores[gameName].Add(new ScoreEntry { PlayerName = playerName, Score = score, Time = time, Date = DateTime.Now });
 
-        // Keep only top 10 scores
         _scores[gameName] = _scores[gameName]
             .OrderByDescending(s => s.Score)
             .ThenBy(s => s.Time)
             .Take(10)
             .ToList();
 
-        Save();
+        SaveGameScores(gameName);
     }
 
     public List<ScoreEntry> GetScores(string gameName)
     {
-        return _scores.ContainsKey(gameName) 
-            ? _scores[gameName] 
-            : new List<ScoreEntry>();
+        return _scores.ContainsKey(gameName) ? _scores[gameName] : new List<ScoreEntry>();
     }
 
-    private void Save()
+    private string GetScoresPath(string gameName)
+    {
+        var safe = string.Concat(gameName.Where(c => !Path.GetInvalidFileNameChars().Contains(c)));
+        return Path.Combine(ScoresDir, $"{{safe}}-highscores.json");
+    }
+
+    private void SaveGameScores(string gameName)
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(ScoresPath)!);
-            var json = JsonSerializer.Serialize(_scores, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(ScoresPath, json);
+            Directory.CreateDirectory(ScoresDir);
+            var path = GetScoresPath(gameName);
+            var tmp = path + ".tmp";
+            var json = JsonSerializer.Serialize(_scores[gameName], new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(tmp, json);
+            if (File.Exists(path)) File.Replace(tmp, path, null);
+            else File.Move(tmp, path);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to save highscores: {ex.Message}");
+            Console.WriteLine($"Failed to save highscores for {{gameName}}: {{ex.Message}}");
         }
     }
 
-    private void Load()
+    private void LoadAll()
     {
         try
         {
-            if (File.Exists(ScoresPath))
+            if (!Directory.Exists(ScoresDir)) return;
+            var files = Directory.GetFiles(ScoresDir, "*-highscores.json");
+            foreach (var f in files)
             {
-                var json = File.ReadAllText(ScoresPath);
-                _scores = JsonSerializer.Deserialize<Dictionary<string, List<ScoreEntry>>>(json) 
-                    ?? new Dictionary<string, List<ScoreEntry>>();
+                try
+                {
+                    var gameName = Path.GetFileNameWithoutExtension(f).Replace("-highscores", "");
+                    var json = File.ReadAllText(f);
+                    var list = JsonSerializer.Deserialize<List<ScoreEntry>>(json) ?? new List<ScoreEntry>();
+                    _scores[gameName] = list;
+                }
+                catch { }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load highscores: {ex.Message}");
+            Console.WriteLine($"Failed to load highscores: {{ex.Message}}");
             _scores = new Dictionary<string, List<ScoreEntry>>();
         }
     }

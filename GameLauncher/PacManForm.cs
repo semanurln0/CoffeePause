@@ -19,10 +19,12 @@ public class PacManForm : Form
     // Powerup (strawberry)
     private int powerX = -1;
     private int powerY = -1;
-    private int powerTicksLeft = 0; // ticks remaining where ghosts are vulnerable
-    private const int PowerDurationTicks = 30; // number of game ticks vulnerability lasts
+    private int powerTicksLeft = 0;
+    private const int PowerDurationTicks = 30;
 
     private Image? _powerImage;
+
+    private bool isPaused = false;
 
     private class Ghost
     {
@@ -38,7 +40,7 @@ public class PacManForm : Form
     {
         InitializeComponent();
         InitializeGame();
-        _powerImage = AssetManager.Instance.LoadImage("strawberry.png") ?? AssetManager.Instance.LoadImage("strawberry.jpg") ?? AssetManager.Instance.LoadImage("strawberry.svg");
+        _powerImage = AssetManager.Instance.LoadImage("strawberry.svg") ?? AssetManager.Instance.LoadImage("strawberry.png");
     }
 
     private void InitializeComponent()
@@ -62,6 +64,7 @@ public class PacManForm : Form
     private void InitializeGame()
     {
         gameRunning = true;
+        isPaused = false;
         score = 0;
         startTime = DateTime.Now;
         ghostMoveCounter = 0;
@@ -88,19 +91,18 @@ public class PacManForm : Form
         }
         pacManX = 10;
         pacManY = 5;
-        maze[pacManY, pacManX] = ' ';        
+        maze[pacManY, pacManX] = ' ';
     }
 
     private void InitializeGhosts()
     {
         ghosts.Add(new Ghost { X = 3, Y = 3, Color = Color.Red, SpawnX = 3, SpawnY = 3 });
         ghosts.Add(new Ghost { X = 16, Y = 3, Color = Color.Cyan, SpawnX = 16, SpawnY = 3 });
-        ghosts.Add(new Ghost { X = 3, Y = 6, Color = Color.Pink, SpawnX = 3, SpawnY = 6 });
+        ghosts.Add(new Ghost { X = 3, Y = 6, Color = Color.Blue, SpawnX = 3, SpawnY = 6 });
     }
 
     private void PlacePowerUp()
     {
-        // Place a strawberry in a free dot cell
         var rand = new Random();
         var freeCells = new List<(int x, int y)>();
         for (int y = 1; y < 9; y++)
@@ -110,61 +112,49 @@ public class PacManForm : Form
         if (freeCells.Count > 0)
         {
             var pick = freeCells[rand.Next(freeCells.Count)];
-            powerX = pick.x;
-            powerY = pick.y;
-            // mark with 'o' so rendering knows
-            maze[powerY, powerX] = 'o';
+            powerX = pick.x; powerY = pick.y; maze[powerY, powerX] = 'o';
         }
     }
 
     private void PacManForm_KeyDown(object? sender, KeyEventArgs e)
     {
-        if (!gameRunning) return;
+        if (e.KeyCode == Keys.P)
+        {
+            TogglePause();
+            return;
+        }
+        if (e.KeyCode == Keys.Escape)
+        {
+            this.Close();
+            return;
+        }
+
+        if (!gameRunning || isPaused) return;
 
         switch (e.KeyCode)
         {
-            case Keys.W:
-                MovePacMan(0, -1);
-                break;
-            case Keys.S:
-                MovePacMan(0, 1);
-                break;
-            case Keys.A:
-                MovePacMan(-1, 0);
-                break;
-            case Keys.D:
-                MovePacMan(1, 0);
-                break;
-            case Keys.Escape:
-                this.Close();
-                break;
+            case Keys.W: MovePacMan(0, -1); break;
+            case Keys.S: MovePacMan(0, 1); break;
+            case Keys.A: MovePacMan(-1, 0); break;
+            case Keys.D: MovePacMan(1, 0); break;
         }
+    }
+
+    private void TogglePause()
+    {
+        isPaused = !isPaused;
+        if (isPaused) gameTimer.Stop(); else gameTimer.Start();
+        this.Invalidate();
     }
 
     private void MovePacMan(int dx, int dy)
     {
-        int newX = pacManX + dx;
-        int newY = pacManY + dy;
-
+        int newX = pacManX + dx; int newY = pacManY + dy;
         if (newX >= 0 && newX < 20 && newY >= 0 && newY < 10 && maze[newY, newX] != '#')
         {
-            if (maze[newY, newX] == '.' )
-            {
-                score += 10;
-                maze[newY, newX] = ' ';
-            }
-            else if (maze[newY, newX] == 'o')
-            {
-                // picked powerup
-                score += 50;
-                maze[newY, newX] = ' ';
-                ActivatePowerUp();
-            }
-
-            pacManX = newX;
-            pacManY = newY;
-            CheckGhostCollision();
-            this.Invalidate();
+            if (maze[newY, newX] == '.') { score += 1; maze[newY, newX] = ' '; }
+            else if (maze[newY, newX] == 'o') { score += 5; maze[newY, newX] = ' '; ActivatePowerUp(); }
+            pacManX = newX; pacManY = newY; CheckGhostCollision(); this.Invalidate();
         }
     }
 
@@ -179,60 +169,19 @@ public class PacManForm : Form
         Random rand = new Random();
         foreach (var ghost in ghosts)
         {
-            // Simple AI: when vulnerable try to move away from Pac-Man, otherwise move toward with some randomness
             int dx = 0, dy = 0;
-
             if (ghost.IsVulnerable)
             {
-                // move away from Pac-Man
-                if (Math.Abs(pacManX - ghost.X) > Math.Abs(pacManY - ghost.Y))
-                    dx = pacManX > ghost.X ? -1 : 1;
-                else
-                    dy = pacManY > ghost.Y ? -1 : 1;
-
-                // small random jitter
-                if (rand.Next(10) < 3)
-                {
-                    int dir = rand.Next(4);
-                    switch (dir)
-                    {
-                        case 0: dx = 1; break;
-                        case 1: dx = -1; break;
-                        case 2: dy = 1; break;
-                        case 3: dy = -1; break;
-                    }
-                }
+                if (Math.Abs(pacManX - ghost.X) > Math.Abs(pacManY - ghost.Y)) dx = pacManX > ghost.X ? -1 : 1; else dy = pacManY > ghost.Y ? -1 : 1;
+                if (rand.Next(10) < 3) { int dir = rand.Next(4); switch (dir) { case 0: dx = 1; break; case 1: dx = -1; break; case 2: dy = 1; break; case 3: dy = -1; break; } }
             }
             else
             {
-                if (rand.Next(10) < 6) // 60% chance to move toward Pac-Man
-                {
-                    if (Math.Abs(pacManX - ghost.X) > Math.Abs(pacManY - ghost.Y))
-                        dx = pacManX > ghost.X ? 1 : -1;
-                    else
-                        dy = pacManY > ghost.Y ? 1 : -1;
-                }
-                else // 40% chance to move randomly
-                {
-                    int dir = rand.Next(4);
-                    switch (dir)
-                    {
-                        case 0: dx = 1; break;
-                        case 1: dx = -1; break;
-                        case 2: dy = 1; break;
-                        case 3: dy = -1; break;
-                    }
-                }
+                if (rand.Next(10) < 6) { if (Math.Abs(pacManX - ghost.X) > Math.Abs(pacManY - ghost.Y)) dx = pacManX > ghost.X ? 1 : -1; else dy = pacManY > ghost.Y ? 1 : -1; }
+                else { int dir = rand.Next(4); switch (dir) { case 0: dx = 1; break; case 1: dx = -1; break; case 2: dy = 1; break; case 3: dy = -1; break; } }
             }
-
-            int newX = ghost.X + dx;
-            int newY = ghost.Y + dy;
-
-            if (newX > 0 && newX < 19 && newY > 0 && newY < 9 && maze[newY, newX] != '#')
-            {
-                ghost.X = newX;
-                ghost.Y = newY;
-            }
+            int newX = ghost.X + dx; int newY = ghost.Y + dy;
+            if (newX > 0 && newX < 19 && newY > 0 && newY < 9 && maze[newY, newX] != '#') { ghost.X = newX; ghost.Y = newY; }
         }
     }
 
@@ -242,195 +191,66 @@ public class PacManForm : Form
         {
             if (ghost.X == pacManX && ghost.Y == pacManY)
             {
-                if (ghost.IsVulnerable)
-                {
-                    // eat ghost
-                    score += 200;
-                    // respawn ghost to spawn location
-                    ghost.X = ghost.SpawnX;
-                    ghost.Y = ghost.SpawnY;
-                    ghost.IsVulnerable = false;
-                }
-                else
-                {
-                    GameOver();
-                    return;
-                }
+                if (ghost.IsVulnerable) { score += 10; ghost.X = ghost.SpawnX; ghost.Y = ghost.SpawnY; ghost.IsVulnerable = false; }
+                else { GameOver(); return; }
             }
         }
     }
 
     private void GameOver()
     {
-        gameRunning = false;
-        gameTimer.Stop();
-
-        ShowGameOverPanel($"Game Over!\nScore: {score}\nTime: {DateTime.Now - startTime:mm\\:ss}");
+        gameRunning = false; gameTimer.Stop(); ShowGameOverPanel($"Game Over!\nScore: {{score}}\nTime: {{DateTime.Now - startTime:mm\:ss}}");
     }
 
     private void ShowGameOverPanel(string text)
     {
-        var panel = new Panel
-        {
-            Size = new Size(this.ClientSize.Width - 40, 160),
-            Location = new Point(20, (this.ClientSize.Height - 160) / 2),
-            BackColor = Color.FromArgb(220, 30, 30, 30)
-        };
-
-        var label = new Label
-        {
-            Text = text,
-            ForeColor = Color.White,
-            Font = new Font("Arial", 14, FontStyle.Bold),
-            AutoSize = false,
-            Size = new Size(panel.Width - 20, 60),
-            Location = new Point(10, 10)
-        };
-        panel.Controls.Add(label);
-
-        var retryBtn = new Button
-        {
-            Text = "Retry",
-            Size = new Size(120, 40),
-            Location = new Point((panel.Width / 2) - 130, 80)
-        };
-        retryBtn.Click += (s, e) => {
-            this.Controls.Remove(panel);
-            InitializeGame();
-            gameTimer.Start();
-        };
+        var panel = new Panel { Size = new Size(this.ClientSize.Width - 40, 160), Location = new Point(20, (this.ClientSize.Height - 160) / 2), BackColor = Color.FromArgb(220, 30, 30, 30) };
+        var label = new Label { Text = text, ForeColor = Color.White, Font = new Font("Arial", 14, FontStyle.Bold), AutoSize = false, Size = new Size(panel.Width - 20, 60), Location = new Point(10, 10) }; panel.Controls.Add(label);
+        var retryBtn = new Button { Text = "Retry", Size = new Size(120, 40), Location = new Point((panel.Width / 2) - 130, 80) };
+        retryBtn.Click += (s, e) => { this.Controls.Remove(panel); InitializeGame(); gameTimer.Start(); };
         panel.Controls.Add(retryBtn);
-
-        var exitBtn = new Button
-        {
-            Text = "Exit",
-            Size = new Size(120, 40),
-            Location = new Point((panel.Width / 2) + 10, 80)
-        };
-        exitBtn.Click += (s, e) => this.Close();
-        panel.Controls.Add(exitBtn);
-
-        this.Controls.Add(panel);
-        panel.BringToFront();
+        var exitBtn = new Button { Text = "Exit", Size = new Size(120, 40), Location = new Point((panel.Width / 2) + 10, 80) };
+        exitBtn.Click += (s, e) => this.Close(); panel.Controls.Add(exitBtn);
+        this.Controls.Add(panel); panel.BringToFront();
     }
 
     private void GameTimer_Tick(object? sender, EventArgs e)
     {
-        if (!gameRunning) return;
-
+        if (!gameRunning || isPaused) return;
         ghostMoveCounter++;
-        if (ghostMoveCounter >= 2) // Move ghosts every 2 ticks (slower than Pac-Man)
-        {
-            MoveGhosts();
-            CheckGhostCollision();
-            ghostMoveCounter = 0;
-        }
-
-        if (powerTicksLeft > 0)
-        {
-            powerTicksLeft--;
-            if (powerTicksLeft == 0)
-            {
-                foreach (var g in ghosts) g.IsVulnerable = false;
-            }
-        }
-
-        if (CheckWin())
-        {
-            gameRunning = false;
-            gameTimer.Stop();
-
-            var elapsed = DateTime.Now - startTime;
-            HighScoreManager.Instance.AddScore("Pac-Man", score, elapsed);
-
-            ShowGameOverPanel($"Congratulations! You collected all the dots!\nScore: {score}\nTime: {elapsed:mm\\:ss}");
-        }
-
+        if (ghostMoveCounter >= 2) { MoveGhosts(); CheckGhostCollision(); ghostMoveCounter = 0; }
+        if (powerTicksLeft > 0) { powerTicksLeft--; if (powerTicksLeft == 0) foreach (var g in ghosts) g.IsVulnerable = false; }
+        if (CheckWin()) { gameRunning = false; gameTimer.Stop(); var elapsed = DateTime.Now - startTime; HighScoreManager.Instance.AddScore("Pac-Man", score, elapsed); ShowGameOverPanel($"Congratulations! You collected all the dots!\nScore: {{score}}\nTime: {{elapsed:mm\:ss}}"); }
         this.Invalidate();
     }
 
     private bool CheckWin()
     {
-        for (int y = 0; y < 10; y++)
-        {
-            for (int x = 0; x < 20; x++)
-            {
-                if (maze[y, x] == '.')
-                    return false;
-            }
-        }
+        for (int y = 0; y < 10; y++) for (int x = 0; x < 20; x++) if (maze[y, x] == '.') return false;
         return true;
     }
 
     private void PacManForm_Paint(object? sender, PaintEventArgs e)
     {
-        var g = e.Graphics;
-        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-        // Draw score
-        g.DrawString($"Score: {score}", new Font("Arial", 14, FontStyle.Bold),
-            Brushes.Yellow, new PointF(10, 10));
-
-        g.DrawString("Controls: W/A/S/D to move, ESC to quit", new Font("Arial", 10),
-            Brushes.White, new PointF(10, 35));
-
+        var g = e.Graphics; g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+        // Draw score (black text)
+        g.DrawString($"Score: {{score}}", new Font("Arial", 14, FontStyle.Bold), Brushes.Black, new PointF(10, 10));
+        g.DrawString("Controls: W/A/S/D to move, P to pause, ESC to exit", new Font("Arial", 10), Brushes.Black, new PointF(10, 35));
         // Draw maze
-        for (int y = 0; y < 10; y++)
+        for (int y = 0; y < 10; y++) for (int x = 0; x < 20; x++)
         {
-            for (int x = 0; x < 20; x++)
+            int drawX = x * CellSize; int drawY = 60 + y * CellSize;
+            switch (maze[y, x])
             {
-                int drawX = x * CellSize;
-                int drawY = 60 + y * CellSize;
-
-                switch (maze[y, x])
-                {
-                    case '#':
-                        g.FillRectangle(Brushes.Blue, drawX, drawY, CellSize, CellSize);
-                        break;
-                    case '.':
-                        g.FillEllipse(Brushes.White, drawX + CellSize/2 - 3, drawY + CellSize/2 - 3, 6, 6);
-                        break;
-                    case 'o':
-                        // draw powerup
-                        if (_powerImage != null)
-                        {
-                            g.DrawImage(_powerImage, new Rectangle(drawX + 4, drawY + 4, CellSize - 8, CellSize - 8));
-                        }
-                        else
-                        {
-                            g.FillEllipse(Brushes.Pink, drawX + 6, drawY + 6, CellSize - 12, CellSize - 12);
-                        }
-                        break;
-                }
+                case '#': g.FillRectangle(Brushes.Blue, drawX, drawY, CellSize, CellSize); break;
+                case '.': g.FillEllipse(new SolidBrush(ColorTranslator.FromHtml("#0083b4"), drawX + CellSize/2 - 3, drawY + CellSize/2 - 3, 6, 6); break;
+                case 'o': if (_powerImage != null) g.DrawImage(_powerImage, new Rectangle(drawX + 4, drawY + 4, CellSize - 8, CellSize - 8)); else g.FillEllipse(Brushes.Pink, drawX + 6, drawY + 6, CellSize - 12, CellSize - 12); break;
             }
         }
-
-        // Draw ghosts
-        foreach (var ghost in ghosts)
-        {
-            int drawX = ghost.X * CellSize;
-            int drawY = 60 + ghost.Y * CellSize;
-
-            var drawColor = ghost.IsVulnerable ? Color.LightBlue : ghost.Color;
-            using (var brush = new SolidBrush(drawColor))
-            {
-                // Ghost body
-                g.FillEllipse(brush, drawX + 2, drawY, CellSize - 4, CellSize - 4);
-                g.FillRectangle(brush, drawX + 2, drawY + CellSize/2, CellSize - 4, CellSize/2);
-
-                // Ghost eyes
-                g.FillEllipse(Brushes.White, drawX + 6, drawY + 8, 7, 7);
-                g.FillEllipse(Brushes.White, drawX + 17, drawY + 8, 7, 7);
-                g.FillEllipse(Brushes.Black, drawX + 8, drawY + 10, 3, 3);
-                g.FillEllipse(Brushes.Black, drawX + 19, drawY + 10, 3, 3);
-            }
-        }
-
-        // Draw Pac-Man
-        int pacDrawX = pacManX * CellSize;
-        int pacDrawY = 60 + pacManY * CellSize;
-        g.FillEllipse(Brushes.Yellow, pacDrawX + 2, pacDrawY + 2, CellSize - 4, CellSize - 4);
-        // Draw mouth
-        g.FillPie(Brushes.Black, pacDrawX + 2, pacDrawY + 2, CellSize - 4, CellSize - 4, 30, 60);
+        // draw ghosts
+        foreach (var ghost in ghosts) { int drawX = ghost.X * CellSize; int drawY = 60 + ghost.Y * CellSize; var drawColor = ghost.IsVulnerable ? Color.LightBlue : ghost.Color; using (var brush = new SolidBrush(drawColor)) { g.FillEllipse(brush, drawX + 2, drawY, CellSize - 4, CellSize - 4); g.FillRectangle(brush, drawX + 2, drawY + CellSize/2, CellSize - 4, CellSize/2); g.FillEllipse(Brushes.White, drawX + 6, drawY + 8, 7, 7); g.FillEllipse(Brushes.White, drawX + 17, drawY + 8, 7, 7); g.FillEllipse(Brushes.Black, drawX + 8, drawY + 10, 3, 3); g.FillEllipse(Brushes.Black, drawX + 19, drawY + 10, 3, 3); } }
+        // draw pacman
+        int pacDrawX = pacManX * CellSize; int pacDrawY = 60 + pacManY * CellSize; g.FillEllipse(Brushes.Yellow, pacDrawX + 2, pacDrawY + 2, CellSize - 4, CellSize - 4); g.FillPie(Brushes.Black, pacDrawX + 2, pacDrawY + 2, CellSize - 4, CellSize - 4, 30, 60);
+        if (isPaused) { var overlay = new SolidBrush(Color.FromArgb(160, 0, 0, 0)); g.FillRectangle(overlay, 0, 0, this.ClientSize.Width, this.ClientSize.Height); g.DrawString("PAUSED", new Font("Arial", 36, FontStyle.Bold), Brushes.White, new PointF(this.ClientSize.Width/2 - 80, this.ClientSize.Height/2 - 30)); }
     }
 }
