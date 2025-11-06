@@ -17,7 +17,7 @@ public class SudokuForm : Form
 
     private void InitializeComponent()
     {
-        this.Text = "Sudoku"; this.Size = new Size(520,600); this.StartPosition = FormStartPosition.CenterScreen; this.FormBorderStyle = FixedSingle; this.MaximizeBox=false; this.KeyPreview=true; this.KeyDown += SudokuForm_KeyDown;
+    this.Text = "Sudoku"; this.Size = new Size(520,600); this.StartPosition = FormStartPosition.CenterScreen; this.FormBorderStyle = FormBorderStyle.FixedSingle; this.MaximizeBox=false; this.KeyPreview=true; this.KeyDown += SudokuForm_KeyDown;
         var infoLabel = new Label { Text = "Left-click cell + numpad = place. Right-click + numpad = draft (temporary)", Location=new Point(10,10), Size=new Size(480,25), Font=new Font("Arial",10)}; this.Controls.Add(infoLabel);
         gamePanel = new Panel { Location=new Point(10,40), Size=new Size(9*CellSize,9*CellSize), BorderStyle=BorderStyle.FixedSingle }; gamePanel.Paint += GamePanel_Paint; gamePanel.MouseClick += GamePanel_MouseClick; this.Controls.Add(gamePanel);
         var newBtn = new Button { Text = "New Puzzle", Location = new Point(10, 480), Size = new Size(120,30) }; newBtn.Click += (s,e) => { NewRandomPuzzle(); this.Invalidate(); }; this.Controls.Add(newBtn);
@@ -46,7 +46,7 @@ public class SudokuForm : Form
 
     private void CheckWin()
     {
-        if (!IsBoardComplete()) return; if (!IsValidSolution()) return; var elapsed = DateTime.Now - startTime; HighScoreManager.Instance.AddScore("Sudoku", 1000, elapsed); var result = MessageBox.Show($"Congratulations! You solved the Sudoku!\nTime: {{elapsed:mm\:ss}}\n\nPlay again?","Victory!",MessageBoxButtons.YesNo,MessageBoxIcon.Information); if (result==DialogResult.Yes) { startTime = DateTime.Now; NewRandomPuzzle(); gamePanel.Invalidate(); } else this.Close();
+    if (!IsBoardComplete()) return; if (!IsValidSolution()) return; var elapsed = DateTime.Now - startTime; HighScoreManager.Instance.AddScore("Sudoku", 1000, elapsed); var result = MessageBox.Show($"Congratulations! You solved the Sudoku!\nTime: {elapsed:mm\\:ss}\n\nPlay again?","Victory!",MessageBoxButtons.YesNo,MessageBoxIcon.Information); if (result==DialogResult.Yes) { startTime = DateTime.Now; NewRandomPuzzle(); gamePanel.Invalidate(); } else this.Close();
     }
 
     private bool IsBoardComplete() { for (int y=0;y<9;y++) for (int x=0;x<9;x++) if (board[y,x]==0) return false; return true; }
@@ -84,7 +84,7 @@ public class SudokuGenerator
     private bool CheckIfSafe(int i,int j,int num) { return !UsedInRow(i,num) && !UsedInCol(j,num) && !UsedInBox(i - i%3, j - j%3, num); }
     private bool UsedInRow(int i,int num) { for (int j=0;j<9;j++) if (board[i,j]==num) return true; return false; }
     private bool UsedInCol(int j,int num) { for (int i=0;i<9;i++) if (board[i,j]==num) return true; return false; }
-    private bool UsedInBox(int rowStart,int colStart,int num) { for (int i=0;i<3;i++) for (int j=0;j<3;j++) if (board[rowStart+i,colStart+j]==num) return true; }
+    private bool UsedInBox(int rowStart,int colStart,int num) { for (int i=0;i<3;i++) for (int j=0;j<3;j++) if (board[rowStart+i,colStart+j]==num) return true; return false; }
     private bool FillRemaining(int i,int j)
     {
         if (j>=9 && i<8) { i++; j=0; }
