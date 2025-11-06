@@ -36,8 +36,11 @@ A collection of classic games built with .NET WinForms.
 
 - **High Score System**: Each game tracks top 10 scores with player names and dates
 - **Persistent Storage**: Scores saved to `%APPDATA%/CoffeePause` in JSON format
+  - Windows: `C:\Users\<YourName>\AppData\Roaming\CoffeePause\`
+  - Files: `PacMan_scores.json`, `Sudoku_scores.json`, `Minesweeper_scores.json`, `SpiderSolitaire_scores.json`
 - **Settings**: Per-game difficulty and customization options
 - **Clean UI**: Modern, colorful main menu with easy game selection
+- **SVG Assets**: High-quality scalable vector graphics for game elements
 
 ## Building and Running
 
@@ -45,7 +48,31 @@ A collection of classic games built with .NET WinForms.
 - .NET 9.0 SDK or later
 - Windows OS (for WinForms support)
 
-### Build Instructions
+### Quick Start (Windows)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/semanurln0/CoffeePause.git
+   cd CoffeePause
+   ```
+
+2. **Build and publish the application**
+   ```bash
+   dotnet publish GameLauncher/GameLauncher.csproj -c Release -r win-x64 --self-contained false -o ./publish
+   ```
+
+3. **Run the application**
+   - Double-click `RunCoffeePause.bat`, or
+   - Run `publish\GameLauncher.exe` directly
+
+4. **Create a desktop shortcut (optional)**
+   ```powershell
+   # Run in PowerShell
+   .\CreateShortcut.ps1
+   ```
+   Then move the `CoffeePause.lnk` file to your desktop.
+
+### Development Build
 
 ```bash
 # Build the solution
@@ -55,14 +82,12 @@ dotnet build CoffeePause.sln
 dotnet run --project GameLauncher/GameLauncher.csproj
 ```
 
-### Creating a Standalone Executable
+### Creating a Self-Contained Executable
+
+If you want to run the application without installing .NET:
 
 ```bash
-# Publish as self-contained executable
-dotnet publish GameLauncher/GameLauncher.csproj -c Release -r win-x64 --self-contained
-
-# The executable will be in:
-# GameLauncher/bin/Release/net9.0-windows/win-x64/publish/GameLauncher.exe
+dotnet publish GameLauncher/GameLauncher.csproj -c Release -r win-x64 --self-contained true -o ./publish-standalone
 ```
 
 ## Project Structure
