@@ -99,3 +99,7 @@ All SVG assets are provided and should not be modified. They include:
 - Project logo
 
 Enjoy your coffee break! ☕
+
+## Version
+
+Version 1.0 - Initial Release
