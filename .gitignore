@@ -482,3 +482,11 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Build results specific to this project
+[Bb]in/
+[Oo]bj/
+
+# Ignore bin and obj directories at any level
+**/bin/
+**/obj/
