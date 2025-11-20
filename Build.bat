@@ -6,11 +6,15 @@ dotnet publish Code/GameLauncher/GameLauncher.csproj -c Release -r win-x64 --sel
 
 if %ERRORLEVEL% EQU 0 (
     echo.
+    echo Copying executable to main folder...
+    copy Build\GameLauncher.exe . >nul
+    echo.
     echo Build successful!
-    echo Executable created at: Build\GameLauncher.exe
+    echo Executable created at: GameLauncher.exe
+    echo Other build files in: Build\
     echo.
     echo You can now run the game by:
-    echo   1. Double-clicking Build\GameLauncher.exe
+    echo   1. Double-clicking GameLauncher.exe
     echo.
     pause
 ) else (

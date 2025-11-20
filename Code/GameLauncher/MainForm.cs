@@ -2,6 +2,9 @@ namespace GameLauncher;
 
 public partial class MainForm : Form
 {
+    private const int InitialWidth = 800;
+    private const int InitialHeight = 600;
+    
     public MainForm()
     {
         InitializeComponent();
@@ -94,7 +97,8 @@ public partial class MainForm : Form
             Font = new Font("Segoe UI", 28, FontStyle.Bold),
             ForeColor = Color.FromArgb(74, 166, 186),
             AutoSize = true,
-            Location = new Point(formCenterX - 80, 50)
+            Location = new Point(formCenterX - 80, 50),
+            BackColor = Color.Transparent
         };
         mainPanel.Controls.Add(titleLabel);
         
@@ -105,7 +109,8 @@ public partial class MainForm : Form
             Font = new Font("Segoe UI", 12),
             ForeColor = Color.Gray,
             AutoSize = true,
-            Location = new Point(formCenterX - 50, 100)
+            Location = new Point(formCenterX - 50, 100),
+            BackColor = Color.Transparent
         };
         mainPanel.Controls.Add(subtitleLabel);
         
@@ -213,6 +218,11 @@ public partial class MainForm : Form
     
     private void MainForm_Resize(object? sender, EventArgs e)
     {
+        // Calculate scale factors
+        float scaleX = (float)this.ClientSize.Width / InitialWidth;
+        float scaleY = (float)this.ClientSize.Height / InitialHeight;
+        float scale = Math.Min(scaleX, scaleY); // Use uniform scaling
+        
         // Find the main panel and games panel
         Panel? mainPanel = null;
         TableLayoutPanel? gamesPanel = null;
@@ -254,30 +264,48 @@ public partial class MainForm : Form
                 }
             }
             
-            // Center the games panel
+            // Scale and center the games panel
             if (gamesPanel != null)
             {
-                int centerX = (this.ClientSize.Width - gamesPanel.Width) / 2;
-                int centerY = (this.ClientSize.Height - gamesPanel.Height) / 2 + 20;
-                gamesPanel.Location = new Point(Math.Max(10, centerX), Math.Max(150, centerY));
+                int scaledWidth = (int)(500 * scale);
+                int scaledHeight = (int)(350 * scale);
+                gamesPanel.Size = new Size(scaledWidth, scaledHeight);
+                
+                int centerX = (this.ClientSize.Width - scaledWidth) / 2;
+                int centerY = (int)((this.ClientSize.Height - scaledHeight) / 2 + 20 * scale);
+                gamesPanel.Location = new Point(Math.Max(10, centerX), Math.Max((int)(150 * scale), centerY));
+                
+                // Scale button fonts
+                foreach (Control ctrl in gamesPanel.Controls)
+                {
+                    if (ctrl is Button btn)
+                    {
+                        btn.Font = new Font("Segoe UI", 16 * scale, FontStyle.Bold);
+                    }
+                }
             }
             
-            // Reposition title elements based on new center
+            // Scale and reposition title elements based on new center
             int formCenterX = this.ClientSize.Width / 2;
             
             if (logoPictureBox != null)
             {
-                logoPictureBox.Location = new Point(formCenterX - 150, 40);
+                int logoSize = (int)(64 * scale);
+                logoPictureBox.Size = new Size(logoSize, logoSize);
+                logoPictureBox.Location = new Point((int)(formCenterX - 150 * scale), (int)(40 * scale));
             }
             
             if (titleLabel != null)
             {
-                titleLabel.Location = new Point(formCenterX - 80, 50);
+                titleLabel.Font = new Font("Segoe UI", 28 * scale, FontStyle.Bold);
+                // Recalculate position after font change
+                titleLabel.Location = new Point((int)(formCenterX - 80 * scale), (int)(50 * scale));
             }
             
             if (subtitleLabel != null)
             {
-                subtitleLabel.Location = new Point(formCenterX - subtitleLabel.Width / 2, 100);
+                subtitleLabel.Font = new Font("Segoe UI", 12 * scale);
+                subtitleLabel.Location = new Point((int)(formCenterX - subtitleLabel.Width / 2), (int)(100 * scale));
             }
         }
     }
