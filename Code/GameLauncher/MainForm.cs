@@ -76,7 +76,7 @@ public partial class MainForm : Form
         }
         
         // Calculate initial center position
-        int formCenterX = this.ClientSize.Width / 2;
+        int formCenterX = InitialWidth / 2;
         
         // Title label with logo
         var logoImage = AssetManager.LoadSvgAsImage("project-logo.svg", 64, 64);
@@ -120,7 +120,7 @@ public partial class MainForm : Form
         var gamesPanel = new TableLayoutPanel
         {
             Name = "gamesPanel",
-            Location = new Point((this.ClientSize.Width - 500) / 2, 150),
+            Location = new Point((InitialWidth - 500) / 2, 150),
             Size = new Size(500, 350),
             ColumnCount = 2,
             RowCount = 2,
@@ -167,7 +167,7 @@ public partial class MainForm : Form
         // Panel width is 280, with 20 margin from right edge
         int panelWidth = 280;
         int rightMargin = 20;
-        int xPosition = this.ClientSize.Width - panelWidth - rightMargin;
+        int xPosition = InitialWidth - panelWidth - rightMargin;
         
         var panel = new Panel
         {
