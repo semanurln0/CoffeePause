@@ -156,16 +156,23 @@ public partial class MainForm : Form
         // Add caffeine tracker panel on the right
         var caffeinePanel = CreateCaffeineTrackerPanel();
         mainPanel.Controls.Add(caffeinePanel);
+        caffeinePanel.BringToFront(); // Ensure it's visible on top
         
         this.Controls.Add(mainPanel);
     }
     
     private Panel CreateCaffeineTrackerPanel()
     {
+        // Calculate position from the right edge of the client area
+        // Panel width is 280, with 20 margin from right edge
+        int panelWidth = 280;
+        int rightMargin = 20;
+        int xPosition = this.ClientSize.Width - panelWidth - rightMargin;
+        
         var panel = new Panel
         {
-            Location = new Point(550, 40),
-            Size = new Size(280, 520),
+            Location = new Point(xPosition, 40),
+            Size = new Size(panelWidth, 520),
             BackColor = Color.FromArgb(240, 248, 255),
             BorderStyle = BorderStyle.FixedSingle,
             Anchor = AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom
