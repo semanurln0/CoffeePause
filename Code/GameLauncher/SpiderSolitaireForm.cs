@@ -53,6 +53,7 @@ public partial class SpiderSolitaireForm : Form
     {
         this.Text = "Spider Solitaire";
         this.Size = new Size(900, 700);
+        this.MinimumSize = new Size(900, 700);
         this.StartPosition = FormStartPosition.CenterScreen;
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
@@ -66,7 +67,8 @@ public partial class SpiderSolitaireForm : Form
             Location = new Point(20, 10),
             Size = new Size(200, 25),
             Font = new Font("Arial", 12, FontStyle.Bold),
-            Text = "Score: 0"
+            Text = "Score: 0",
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
         };
         this.Controls.Add(scoreLabel);
         
@@ -76,12 +78,14 @@ public partial class SpiderSolitaireForm : Form
             Location = new Point(10, 50),
             Size = new Size(860, 600),
             BackColor = Color.DarkGreen,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right // Solitaire can expand in all directions
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseDown += GamePanel_MouseDown;
         gamePanel.MouseMove += GamePanel_MouseMove;
         gamePanel.MouseUp += GamePanel_MouseUp;
+        gamePanel.Resize += (s, e) => gamePanel.Invalidate();
         typeof(Panel).InvokeMember("DoubleBuffered",
             System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
             null, gamePanel, new object[] { true });
@@ -92,7 +96,8 @@ public partial class SpiderSolitaireForm : Form
         {
             Text = "Settings",
             Location = new Point(250, 10),
-            Size = new Size(100, 30)
+            Size = new Size(100, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
         };
         settingsBtn.Click += ShowSettings;
         this.Controls.Add(settingsBtn);
@@ -102,7 +107,8 @@ public partial class SpiderSolitaireForm : Form
         {
             Text = "Hint",
             Location = new Point(360, 10),
-            Size = new Size(100, 30)
+            Size = new Size(100, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
         };
         hintBtn.Click += ShowHint;
         this.Controls.Add(hintBtn);
@@ -112,7 +118,8 @@ public partial class SpiderSolitaireForm : Form
         {
             Text = "Undo",
             Location = new Point(470, 10),
-            Size = new Size(100, 30)
+            Size = new Size(100, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
         };
         undoBtn.Click += UndoMove;
         this.Controls.Add(undoBtn);
@@ -122,7 +129,8 @@ public partial class SpiderSolitaireForm : Form
         {
             Text = "New Game",
             Location = new Point(580, 10),
-            Size = new Size(100, 30)
+            Size = new Size(100, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
         };
         newGameBtn.Click += (s, e) => InitializeGame();
         this.Controls.Add(newGameBtn);
@@ -132,7 +140,8 @@ public partial class SpiderSolitaireForm : Form
         {
             Text = "Scoreboard",
             Location = new Point(690, 10),
-            Size = new Size(100, 30)
+            Size = new Size(100, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left
         };
         scoreboardBtn.Click += ShowScoreboard;
         this.Controls.Add(scoreboardBtn);
@@ -875,7 +884,8 @@ public partial class SpiderSolitaireForm : Form
     
     private void SpiderSolitaireForm_Resize(object? sender, EventArgs e)
     {
-        // Keep game panel fixed size, no adjustment needed
+        // Game panel automatically resizes via Anchor property
+        gamePanel?.Invalidate();
     }
     
     protected override void OnFormClosing(FormClosingEventArgs e)

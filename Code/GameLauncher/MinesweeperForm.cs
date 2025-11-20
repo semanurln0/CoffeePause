@@ -10,6 +10,9 @@ public partial class MinesweeperForm : Form
     private Cell[,]? cells;
     private Panel? gamePanel;
     private Label? statusLabel;
+    private Button? settingsBtn;
+    private Button? newGameBtn;
+    private Button? scoreboardBtn;
     private bool gameOver = false;
     private int flagsPlaced = 0;
     private int cellsRevealed = 0;
@@ -46,7 +49,7 @@ public partial class MinesweeperForm : Form
         // Game panel - will be created in UpdateFormSize
         
         // Settings button
-        var settingsBtn = new Button
+        settingsBtn = new Button
         {
             Text = "Settings",
             Location = new Point(gridWidth * CellSize + 30, 40),
@@ -56,7 +59,7 @@ public partial class MinesweeperForm : Form
         this.Controls.Add(settingsBtn);
         
         // New game button
-        var newGameBtn = new Button
+        newGameBtn = new Button
         {
             Text = "New Game",
             Location = new Point(gridWidth * CellSize + 30, 80),
@@ -66,7 +69,7 @@ public partial class MinesweeperForm : Form
         this.Controls.Add(newGameBtn);
         
         // Scoreboard button
-        var scoreboardBtn = new Button
+        scoreboardBtn = new Button
         {
             Text = "Scoreboard",
             Location = new Point(gridWidth * CellSize + 30, 120),
@@ -78,7 +81,8 @@ public partial class MinesweeperForm : Form
     
     private void UpdateFormSize()
     {
-        this.Size = new Size(gridWidth * CellSize + 250, gridHeight * CellSize + 100);
+        this.ClientSize = new Size(gridWidth * CellSize + 210, Math.Max(gridHeight * CellSize + 60, 250));
+        this.MinimumSize = new Size(gridWidth * CellSize + 210, Math.Max(gridHeight * CellSize + 60, 250));
         
         if (gamePanel != null)
         {
@@ -90,14 +94,33 @@ public partial class MinesweeperForm : Form
             Location = new Point(10, 40),
             Size = new Size(gridWidth * CellSize, gridHeight * CellSize),
             BackColor = Color.LightGray,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left // Don't anchor right
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseClick += GamePanel_MouseClick;
+        gamePanel.Resize += (s, e) => gamePanel.Invalidate();
         typeof(Panel).InvokeMember("DoubleBuffered",
             System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
             null, gamePanel, new object[] { true });
         this.Controls.Add(gamePanel);
+        
+        // Update button positions with anchoring - buttons stay on right
+        if (settingsBtn != null)
+        {
+            settingsBtn.Location = new Point(gridWidth * CellSize + 30, 40);
+            settingsBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        }
+        if (newGameBtn != null)
+        {
+            newGameBtn.Location = new Point(gridWidth * CellSize + 30, 80);
+            newGameBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        }
+        if (scoreboardBtn != null)
+        {
+            scoreboardBtn.Location = new Point(gridWidth * CellSize + 30, 120);
+            scoreboardBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        }
     }
     
     private void InitializeGame()
@@ -174,10 +197,16 @@ public partial class MinesweeperForm : Form
     
     private void GamePanel_MouseClick(object? sender, MouseEventArgs e)
     {
-        if (gameOver || cells == null) return;
+        if (gameOver || cells == null || gamePanel == null) return;
         
-        int x = e.X / CellSize;
-        int y = e.Y / CellSize;
+        // Calculate scale
+        float scaleX = (float)gamePanel.Width / (gridWidth * CellSize);
+        float scaleY = (float)gamePanel.Height / (gridHeight * CellSize);
+        float scale = Math.Min(scaleX, scaleY);
+        float scaledCellSize = CellSize * scale;
+        
+        int x = (int)(e.X / scaledCellSize);
+        int y = (int)(e.Y / scaledCellSize);
         
         if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) return;
         
@@ -265,15 +294,24 @@ public partial class MinesweeperForm : Form
     
     private void GamePanel_Paint(object? sender, PaintEventArgs e)
     {
-        if (cells == null) return;
+        if (cells == null || gamePanel == null) return;
         
         var g = e.Graphics;
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+        
+        // Calculate scale to fit the panel
+        float scaleX = (float)gamePanel.Width / (gridWidth * CellSize);
+        float scaleY = (float)gamePanel.Height / (gridHeight * CellSize);
+        float scale = Math.Min(scaleX, scaleY);
+        
+        // Calculate scaled cell size
+        float scaledCellSize = CellSize * scale;
         
         for (int y = 0; y < gridHeight; y++)
         {
             for (int x = 0; x < gridWidth; x++)
             {
-                var rect = new Rectangle(x * CellSize, y * CellSize, CellSize, CellSize);
+                var rect = new RectangleF(x * scaledCellSize, y * scaledCellSize, scaledCellSize, scaledCellSize);
                 var cell = cells[y, x];
                 
                 if (cell.IsRevealed)
@@ -282,11 +320,13 @@ public partial class MinesweeperForm : Form
                     
                     if (cell.IsMine)
                     {
-                        g.FillEllipse(Brushes.Red, x * CellSize + 5, y * CellSize + 5, CellSize - 10, CellSize - 10);
+                        g.FillEllipse(Brushes.Red, x * scaledCellSize + 5 * scale, y * scaledCellSize + 5 * scale, 
+                            scaledCellSize - 10 * scale, scaledCellSize - 10 * scale);
                     }
                     else if (cell.AdjacentMines > 0)
                     {
-                        var font = new Font("Arial", 12, FontStyle.Bold);
+                        var fontSize = Math.Max(8, 12 * scale);
+                        var font = new Font("Arial", fontSize, FontStyle.Bold);
                         var color = cell.AdjacentMines switch
                         {
                             1 => Brushes.Blue,
@@ -300,8 +340,8 @@ public partial class MinesweeperForm : Form
                         var text = cell.AdjacentMines.ToString();
                         var size = g.MeasureString(text, font);
                         g.DrawString(text, font, color,
-                            x * CellSize + (CellSize - size.Width) / 2,
-                            y * CellSize + (CellSize - size.Height) / 2);
+                            x * scaledCellSize + (scaledCellSize - size.Width) / 2,
+                            y * scaledCellSize + (scaledCellSize - size.Height) / 2);
                     }
                 }
                 else
@@ -310,16 +350,17 @@ public partial class MinesweeperForm : Form
                     
                     if (cell.IsFlagged)
                     {
-                        g.FillPolygon(Brushes.Red, new Point[]
+                        var flagPoints = new PointF[]
                         {
-                            new Point(x * CellSize + 8, y * CellSize + 8),
-                            new Point(x * CellSize + 22, y * CellSize + 15),
-                            new Point(x * CellSize + 8, y * CellSize + 22)
-                        });
+                            new PointF(x * scaledCellSize + 8 * scale, y * scaledCellSize + 8 * scale),
+                            new PointF(x * scaledCellSize + 22 * scale, y * scaledCellSize + 15 * scale),
+                            new PointF(x * scaledCellSize + 8 * scale, y * scaledCellSize + 22 * scale)
+                        };
+                        g.FillPolygon(Brushes.Red, flagPoints);
                     }
                 }
                 
-                g.DrawRectangle(Pens.Gray, rect);
+                g.DrawRectangle(Pens.Gray, rect.X, rect.Y, rect.Width, rect.Height);
             }
         }
     }
@@ -463,7 +504,9 @@ public partial class MinesweeperForm : Form
     
     private void MinesweeperForm_Resize(object? sender, EventArgs e)
     {
-        // Fixed size game panel, no adjustment needed
+        // Game panel automatically resizes via Anchor property
+        // Just refresh the display
+        gamePanel?.Invalidate();
     }
 }
 

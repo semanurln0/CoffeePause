@@ -18,6 +18,9 @@ public partial class PacManForm : Form
     private HighScoreManager scoreManager = new HighScoreManager();
     private Panel? gamePanel;
     private Label? scoreLabel;
+    private Button? settingsBtn;
+    private Button? scoreboardBtn;
+    private Button? newGameBtn;
     
     // SVG Images
     private Image? pacmanImage;
@@ -55,6 +58,7 @@ public partial class PacManForm : Form
     {
         this.Text = "Pac-Man";
         this.Size = new Size(GridWidth * CellSize + 250, GridHeight * CellSize + 100);
+        this.MinimumSize = new Size(GridWidth * CellSize + 250, GridHeight * CellSize + 100);
         this.StartPosition = FormStartPosition.CenterScreen;
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
@@ -68,9 +72,11 @@ public partial class PacManForm : Form
             Location = new Point(10, 40),
             Size = new Size(GridWidth * CellSize, GridHeight * CellSize),
             BackColor = Color.Black,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left // Don't anchor right
         };
         gamePanel.Paint += GamePanel_Paint;
+        gamePanel.Resize += (s, e) => gamePanel.Invalidate();
         typeof(Panel).InvokeMember("DoubleBuffered",
             System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
             null, gamePanel, new object[] { true });
@@ -82,36 +88,40 @@ public partial class PacManForm : Form
             Location = new Point(GridWidth * CellSize + 30, 40),
             Size = new Size(200, 30),
             Font = new Font("Arial", 14, FontStyle.Bold),
-            Text = "Score: 0"
+            Text = "Score: 0",
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         this.Controls.Add(scoreLabel);
         
         // Settings button
-        var settingsBtn = new Button
+        settingsBtn = new Button
         {
             Text = "Settings",
             Location = new Point(GridWidth * CellSize + 30, 80),
-            Size = new Size(150, 30)
+            Size = new Size(150, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         settingsBtn.Click += ShowSettings;
         this.Controls.Add(settingsBtn);
         
         // Scoreboard button
-        var scoreboardBtn = new Button
+        scoreboardBtn = new Button
         {
             Text = "Scoreboard",
             Location = new Point(GridWidth * CellSize + 30, 120),
-            Size = new Size(150, 30)
+            Size = new Size(150, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         scoreboardBtn.Click += ShowScoreboard;
         this.Controls.Add(scoreboardBtn);
         
         // New game button
-        var newGameBtn = new Button
+        newGameBtn = new Button
         {
             Text = "New Game",
             Location = new Point(GridWidth * CellSize + 30, 160),
-            Size = new Size(150, 30)
+            Size = new Size(150, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         newGameBtn.Click += (s, e) => InitializeGame();
         this.Controls.Add(newGameBtn);
@@ -529,11 +539,8 @@ public partial class PacManForm : Form
     
     private void PacManForm_Resize(object? sender, EventArgs e)
     {
-        // Keep the game panel fixed size, but adjust side panel
-        if (scoreLabel != null)
-        {
-            scoreLabel.Location = new Point(GridWidth * CellSize + 30, 40);
-        }
+        // Game panel automatically resizes via Anchor property
+        gamePanel?.Invalidate();
     }
 }
 
