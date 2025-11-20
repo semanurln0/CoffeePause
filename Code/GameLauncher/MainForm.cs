@@ -6,6 +6,7 @@ public partial class MainForm : Form
     private const int InitialHeight = 600;
     private CaffeineTracker caffeineTracker = new CaffeineTracker();
     private Label? caffeineStatusLabel;
+    private Panel? caffeinePanel;
     
     public MainForm()
     {
@@ -154,7 +155,7 @@ public partial class MainForm : Form
         mainPanel.Controls.Add(gamesPanel);
         
         // Add caffeine tracker panel on the right
-        var caffeinePanel = CreateCaffeineTrackerPanel();
+        caffeinePanel = CreateCaffeineTrackerPanel();
         mainPanel.Controls.Add(caffeinePanel);
         caffeinePanel.BringToFront(); // Ensure it's visible on top
         
@@ -167,7 +168,8 @@ public partial class MainForm : Form
         // Panel width is 280, with 20 margin from right edge
         int panelWidth = 280;
         int rightMargin = 20;
-        int xPosition = InitialWidth - panelWidth - rightMargin;
+        // Use actual client width instead of InitialWidth constant
+        int xPosition = this.ClientSize.Width - panelWidth - rightMargin;
         
         var panel = new Panel
         {
