@@ -2,6 +2,9 @@ namespace GameLauncher;
 
 public partial class MainForm : Form
 {
+    private const int InitialWidth = 800;
+    private const int InitialHeight = 600;
+    
     public MainForm()
     {
         InitializeComponent();
@@ -70,6 +73,9 @@ public partial class MainForm : Form
             // Keep default background color if image loading fails
         }
         
+        // Calculate initial center position
+        int formCenterX = this.ClientSize.Width / 2;
+        
         // Title label with logo
         var logoImage = AssetManager.LoadSvgAsImage("project-logo.svg", 64, 64);
         if (logoImage != null)
@@ -79,7 +85,7 @@ public partial class MainForm : Form
                 Image = logoImage,
                 SizeMode = PictureBoxSizeMode.Zoom,
                 Size = new Size(64, 64),
-                Location = new Point(180, 40),
+                Location = new Point(formCenterX - 150, 40),
                 BackColor = Color.Transparent
             };
             mainPanel.Controls.Add(logoPictureBox);
@@ -91,18 +97,20 @@ public partial class MainForm : Form
             Font = new Font("Segoe UI", 28, FontStyle.Bold),
             ForeColor = Color.FromArgb(74, 166, 186),
             AutoSize = true,
-            Location = new Point(260, 50)
+            Location = new Point(formCenterX - 80, 50),
+            BackColor = Color.Transparent
         };
         mainPanel.Controls.Add(titleLabel);
         
         // Subtitle
         var subtitleLabel = new Label
         {
-            Text = "Select a game to play",
+            Text = "Choose Game",
             Font = new Font("Segoe UI", 12),
             ForeColor = Color.Gray,
             AutoSize = true,
-            Location = new Point(300, 100)
+            Location = new Point(formCenterX - 50, 100),
+            BackColor = Color.Transparent
         };
         mainPanel.Controls.Add(subtitleLabel);
         
@@ -110,7 +118,7 @@ public partial class MainForm : Form
         var gamesPanel = new TableLayoutPanel
         {
             Name = "gamesPanel",
-            Location = new Point(150, 150),
+            Location = new Point((this.ClientSize.Width - 500) / 2, 150),
             Size = new Size(500, 350),
             ColumnCount = 2,
             RowCount = 2,
@@ -192,7 +200,8 @@ public partial class MainForm : Form
             "- Sudoku\n" +
             "- Minesweeper\n" +
             "- Spider Solitaire\n\n" +
-            "Version 1.0",
+            "Version 1.0\n\n" +
+            "For help, contact: semanurln0.code@gmail.com",
             "About CoffeePause",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information
@@ -209,20 +218,94 @@ public partial class MainForm : Form
     
     private void MainForm_Resize(object? sender, EventArgs e)
     {
-        // Adjust layout on resize
-        int centerX = (this.ClientSize.Width - 500) / 2;
-        int centerY = (this.ClientSize.Height - 350) / 2;
+        // Calculate scale factors
+        float scaleX = (float)this.ClientSize.Width / InitialWidth;
+        float scaleY = (float)this.ClientSize.Height / InitialHeight;
+        float scale = Math.Min(scaleX, scaleY); // Use uniform scaling
+        
+        // Find the main panel and games panel
+        Panel? mainPanel = null;
+        TableLayoutPanel? gamesPanel = null;
+        PictureBox? logoPictureBox = null;
+        Label? titleLabel = null;
+        Label? subtitleLabel = null;
         
         foreach (Control control in this.Controls)
         {
             if (control is Panel panel && panel.BackgroundImage != null)
             {
-                // Skip panel adjustments - already docked
-                continue;
+                mainPanel = panel;
+                break;
             }
-            else if (control.Name == "gamesPanel" || control is TableLayoutPanel)
+        }
+        
+        if (mainPanel != null)
+        {
+            foreach (Control control in mainPanel.Controls)
             {
-                control.Location = new Point(Math.Max(10, centerX), Math.Max(150, centerY));
+                if (control.Name == "gamesPanel" || control is TableLayoutPanel)
+                {
+                    gamesPanel = control as TableLayoutPanel;
+                }
+                else if (control is PictureBox)
+                {
+                    logoPictureBox = control as PictureBox;
+                }
+                else if (control is Label label)
+                {
+                    if (label.Text == "CoffeePause")
+                    {
+                        titleLabel = label;
+                    }
+                    else if (label.Text == "Choose Game")
+                    {
+                        subtitleLabel = label;
+                    }
+                }
+            }
+            
+            // Scale and center the games panel
+            if (gamesPanel != null)
+            {
+                int scaledWidth = (int)(500 * scale);
+                int scaledHeight = (int)(350 * scale);
+                gamesPanel.Size = new Size(scaledWidth, scaledHeight);
+                
+                int centerX = (this.ClientSize.Width - scaledWidth) / 2;
+                int centerY = (int)((this.ClientSize.Height - scaledHeight) / 2 + 20 * scale);
+                gamesPanel.Location = new Point(Math.Max(10, centerX), Math.Max((int)(150 * scale), centerY));
+                
+                // Scale button fonts
+                foreach (Control ctrl in gamesPanel.Controls)
+                {
+                    if (ctrl is Button btn)
+                    {
+                        btn.Font = new Font("Segoe UI", 16 * scale, FontStyle.Bold);
+                    }
+                }
+            }
+            
+            // Scale and reposition title elements based on new center
+            int formCenterX = this.ClientSize.Width / 2;
+            
+            if (logoPictureBox != null)
+            {
+                int logoSize = (int)(64 * scale);
+                logoPictureBox.Size = new Size(logoSize, logoSize);
+                logoPictureBox.Location = new Point((int)(formCenterX - 150 * scale), (int)(40 * scale));
+            }
+            
+            if (titleLabel != null)
+            {
+                titleLabel.Font = new Font("Segoe UI", 28 * scale, FontStyle.Bold);
+                // Recalculate position after font change
+                titleLabel.Location = new Point((int)(formCenterX - 80 * scale), (int)(50 * scale));
+            }
+            
+            if (subtitleLabel != null)
+            {
+                subtitleLabel.Font = new Font("Segoe UI", 12 * scale);
+                subtitleLabel.Location = new Point((int)(formCenterX - subtitleLabel.Width / 2), (int)(100 * scale));
             }
         }
     }

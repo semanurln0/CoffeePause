@@ -26,6 +26,16 @@ public partial class SpiderSolitaireForm : Form
     private int animationFrame = 0;
     private const int AnimationFrames = 15;
     private int animationTargetColumn = -1;
+    private int animationSourceColumn = -1;
+    private int animationSourceCardIndex = -1;
+    
+    // Hint animation fields
+    private System.Windows.Forms.Timer? hintTimer;
+    private int hintSourceColumn = -1;
+    private int hintSourceCardIndex = -1;
+    private int hintTargetColumn = -1;
+    private int hintBlinkCount = 0;
+    private const int HintBlinkTotal = 6; // 3 blinks (on/off cycles)
     
     private int suitCount = 1; // 1, 2, or 4 suits
     private int score = 0;
@@ -214,7 +224,7 @@ public partial class SpiderSolitaireForm : Form
                     continue;
                 
                 // Skip if animating and this is from the source column
-                if (animatingCards != null && col == dragSourceColumn && i >= dragCardIndex)
+                if (animatingCards != null && col == animationSourceColumn && i >= animationSourceCardIndex)
                     continue;
                 
                 DrawCard(g, card, x, cardY);
@@ -225,6 +235,15 @@ public partial class SpiderSolitaireForm : Form
                     using (var pen = new Pen(Color.Yellow, 3))
                     {
                         g.DrawRectangle(pen, x, cardY, CardWidth, CardHeight);
+                    }
+                }
+                
+                // Highlight hint cards (blink effect)
+                if (hintSourceColumn >= 0 && col == hintSourceColumn && i >= hintSourceCardIndex && (hintBlinkCount % 2 == 0))
+                {
+                    using (var pen = new Pen(Color.LimeGreen, 4))
+                    {
+                        g.DrawRectangle(pen, x - 2, cardY - 2, CardWidth + 4, CardHeight + 4);
                     }
                 }
             }
@@ -243,6 +262,17 @@ public partial class SpiderSolitaireForm : Form
             int x = 200 + i * (CardWidth + 5);
             g.FillRectangle(Brushes.DarkGray, x, 500, CardWidth, CardHeight / 2);
             g.DrawString($"Complete {i + 1}", new Font("Arial", 8), Brushes.White, x + 5, 510);
+        }
+        
+        // Highlight hint target column
+        if (hintTargetColumn >= 0 && (hintBlinkCount % 2 == 0))
+        {
+            int x = hintTargetColumn * (CardWidth + 5) + 10;
+            int y = 10 + tableau[hintTargetColumn].Count * CardOffset;
+            using (var pen = new Pen(Color.LimeGreen, 4))
+            {
+                g.DrawRectangle(pen, x - 2, y - 2, CardWidth + 4, CardHeight + 4);
+            }
         }
         
         // Draw dragged card(s) - only during dragging
@@ -512,6 +542,8 @@ public partial class SpiderSolitaireForm : Form
         animationEnd = new Point(endX, endY);
         animationFrame = 0;
         animationTargetColumn = toCol;
+        animationSourceColumn = fromCol;
+        animationSourceCardIndex = cardIndex;
         
         // Store cards to animate
         animatingCards = tableau[fromCol].GetRange(cardIndex, tableau[fromCol].Count - cardIndex);
@@ -535,13 +567,15 @@ public partial class SpiderSolitaireForm : Form
             // Animation complete, perform the actual move
             animationTimer?.Stop();
             
-            if (animatingCards != null && animationTargetColumn >= 0)
+            if (animatingCards != null && animationTargetColumn >= 0 && animationSourceColumn >= 0 && animationSourceCardIndex >= 0)
             {
-                MoveCards(dragSourceColumn, dragCardIndex, animationTargetColumn);
+                MoveCards(animationSourceColumn, animationSourceCardIndex, animationTargetColumn);
             }
             
             animatingCards = null;
             animationTargetColumn = -1;
+            animationSourceColumn = -1;
+            animationSourceCardIndex = -1;
         }
         
         gamePanel?.Invalidate();
@@ -675,7 +709,19 @@ public partial class SpiderSolitaireForm : Form
     
     private void ShowHint(object? sender, EventArgs e)
     {
-        // Simple hint: find any valid move
+        // If a hint is already showing, stop it
+        if (hintTimer != null && hintTimer.Enabled)
+        {
+            hintTimer.Stop();
+            hintSourceColumn = -1;
+            hintSourceCardIndex = -1;
+            hintTargetColumn = -1;
+            hintBlinkCount = 0;
+            gamePanel?.Invalidate();
+            return;
+        }
+        
+        // Find any valid move
         for (int srcCol = 0; srcCol < tableau.Count; srcCol++)
         {
             if (tableau[srcCol].Count == 0) continue;
@@ -693,8 +739,20 @@ public partial class SpiderSolitaireForm : Form
                         if (tableau[destCol].Count == 0 ||
                             tableau[destCol][tableau[destCol].Count - 1].Rank == movingCard.Rank + 1)
                         {
-                            MessageBox.Show($"Try moving {GetCardName(movingCard)} from column {srcCol + 1} to column {destCol + 1}",
-                                "Hint");
+                            // Start hint animation
+                            hintSourceColumn = srcCol;
+                            hintSourceCardIndex = i;
+                            hintTargetColumn = destCol;
+                            hintBlinkCount = 0;
+                            
+                            // Create and start hint timer
+                            if (hintTimer == null)
+                            {
+                                hintTimer = new System.Windows.Forms.Timer();
+                                hintTimer.Interval = 300; // Blink every 300ms
+                                hintTimer.Tick += HintTimer_Tick;
+                            }
+                            hintTimer.Start();
                             return;
                         }
                     }
@@ -702,7 +760,24 @@ public partial class SpiderSolitaireForm : Form
             }
         }
         
-        MessageBox.Show("No obvious moves found. Try dealing from stock.", "Hint");
+        // No moves found - do nothing (silent)
+    }
+    
+    private void HintTimer_Tick(object? sender, EventArgs e)
+    {
+        hintBlinkCount++;
+        
+        if (hintBlinkCount >= HintBlinkTotal)
+        {
+            // Stop hint animation
+            hintTimer?.Stop();
+            hintSourceColumn = -1;
+            hintSourceCardIndex = -1;
+            hintTargetColumn = -1;
+            hintBlinkCount = 0;
+        }
+        
+        gamePanel?.Invalidate();
     }
     
     private string GetCardName(Card card)
@@ -807,6 +882,8 @@ public partial class SpiderSolitaireForm : Form
     {
         animationTimer?.Stop();
         animationTimer?.Dispose();
+        hintTimer?.Stop();
+        hintTimer?.Dispose();
         base.OnFormClosing(e);
     }
 }
