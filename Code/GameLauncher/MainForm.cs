@@ -2,8 +2,10 @@ namespace GameLauncher;
 
 public partial class MainForm : Form
 {
-    private const int InitialWidth = 800;
+    private const int InitialWidth = 1100; // Increased width for caffeine panel
     private const int InitialHeight = 600;
+    private CaffeineTracker caffeineTracker = new CaffeineTracker();
+    private Label? caffeineStatusLabel;
     
     public MainForm()
     {
@@ -13,7 +15,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "CoffeePause - Game Launcher";
-        this.Size = new Size(800, 600);
+        this.Size = new Size(1100, 600);
         this.StartPosition = FormStartPosition.CenterScreen;
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
@@ -150,7 +152,217 @@ public partial class MainForm : Form
         gamesPanel.Controls.Add(solitaireBtn, 1, 1);
         
         mainPanel.Controls.Add(gamesPanel);
+        
+        // Add caffeine tracker panel on the right
+        var caffeinePanel = CreateCaffeineTrackerPanel();
+        mainPanel.Controls.Add(caffeinePanel);
+        
         this.Controls.Add(mainPanel);
+    }
+    
+    private Panel CreateCaffeineTrackerPanel()
+    {
+        var panel = new Panel
+        {
+            Location = new Point(550, 40),
+            Size = new Size(280, 520),
+            BackColor = Color.FromArgb(240, 248, 255),
+            BorderStyle = BorderStyle.FixedSingle,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom
+        };
+        
+        // Title
+        var titleLabel = new Label
+        {
+            Text = "☕ Caffeine Tracker",
+            Font = new Font("Segoe UI", 14, FontStyle.Bold),
+            ForeColor = Color.FromArgb(74, 166, 186),
+            Location = new Point(10, 10),
+            Size = new Size(260, 30),
+            TextAlign = ContentAlignment.MiddleCenter
+        };
+        panel.Controls.Add(titleLabel);
+        
+        // Drink type
+        var drinkLabel = new Label
+        {
+            Text = "Choose Drink:",
+            Location = new Point(10, 50),
+            Size = new Size(260, 20),
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(drinkLabel);
+        
+        var drinkCombo = new ComboBox
+        {
+            Location = new Point(10, 75),
+            Size = new Size(260, 25),
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Font = new Font("Segoe UI", 9)
+        };
+        drinkCombo.Items.AddRange(CaffeineData.CaffeineContent.Keys.ToArray());
+        drinkCombo.SelectedIndex = 0;
+        panel.Controls.Add(drinkCombo);
+        
+        // Size
+        var sizeLabel = new Label
+        {
+            Text = "Choose Size (ml):",
+            Location = new Point(10, 110),
+            Size = new Size(260, 20),
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(sizeLabel);
+        
+        var sizeInput = new NumericUpDown
+        {
+            Location = new Point(10, 135),
+            Size = new Size(260, 25),
+            Minimum = 50,
+            Maximum = 1000,
+            Value = 250,
+            Increment = 50,
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(sizeInput);
+        
+        // Quantity
+        var quantityLabel = new Label
+        {
+            Text = "Quantity:",
+            Location = new Point(10, 170),
+            Size = new Size(260, 20),
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(quantityLabel);
+        
+        var quantityInput = new NumericUpDown
+        {
+            Location = new Point(10, 195),
+            Size = new Size(260, 25),
+            Minimum = 1,
+            Maximum = 10,
+            Value = 1,
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(quantityInput);
+        
+        // When (time consumed)
+        var whenLabel = new Label
+        {
+            Text = "When (day-time):",
+            Location = new Point(10, 230),
+            Size = new Size(260, 20),
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(whenLabel);
+        
+        var whenPicker = new DateTimePicker
+        {
+            Location = new Point(10, 255),
+            Size = new Size(260, 25),
+            Format = DateTimePickerFormat.Custom,
+            CustomFormat = "MM/dd/yyyy hh:mm tt",
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(whenPicker);
+        
+        // Sleep time
+        var sleepLabel = new Label
+        {
+            Text = "Sleep Time Today:",
+            Location = new Point(10, 290),
+            Size = new Size(260, 20),
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(sleepLabel);
+        
+        var sleepPicker = new DateTimePicker
+        {
+            Location = new Point(10, 315),
+            Size = new Size(260, 25),
+            Format = DateTimePickerFormat.Time,
+            ShowUpDown = true,
+            Value = DateTime.Today.AddHours(23),
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(sleepPicker);
+        
+        // Add button
+        var addButton = new Button
+        {
+            Text = "Add Caffeine",
+            Location = new Point(10, 355),
+            Size = new Size(260, 35),
+            BackColor = Color.FromArgb(74, 166, 186),
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand
+        };
+        addButton.FlatAppearance.BorderSize = 0;
+        addButton.Click += (s, e) =>
+        {
+            var drinkType = drinkCombo.SelectedItem?.ToString() ?? "";
+            var size = (int)sizeInput.Value;
+            var quantity = (int)quantityInput.Value;
+            var when = whenPicker.Value;
+            
+            var caffeineAmount = CaffeineData.CalculateCaffeine(drinkType, size, quantity);
+            
+            var entry = new CaffeineEntry
+            {
+                DrinkType = drinkType,
+                SizeMl = size,
+                Quantity = quantity,
+                CaffeineAmount = caffeineAmount,
+                ConsumedAt = when
+            };
+            
+            caffeineTracker.SaveEntry(entry);
+            UpdateCaffeineStatus(sleepPicker.Value);
+            
+            MessageBox.Show($"Added {caffeineAmount:F0}mg of caffeine!", "Success", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        };
+        panel.Controls.Add(addButton);
+        
+        // Status label
+        caffeineStatusLabel = new Label
+        {
+            Location = new Point(10, 400),
+            Size = new Size(260, 100),
+            Font = new Font("Segoe UI", 9),
+            ForeColor = Color.FromArgb(70, 70, 70),
+            TextAlign = ContentAlignment.TopLeft,
+            BackColor = Color.FromArgb(255, 255, 240),
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(5)
+        };
+        panel.Controls.Add(caffeineStatusLabel);
+        
+        UpdateCaffeineStatus(sleepPicker.Value);
+        
+        return panel;
+    }
+    
+    private void UpdateCaffeineStatus(DateTime sleepTime)
+    {
+        if (caffeineStatusLabel == null) return;
+        
+        var currentCaffeine = caffeineTracker.GetCurrentCaffeineLevel(sleepTime);
+        
+        string status;
+        if (currentCaffeine < 100)
+            status = "✅ Safe Level";
+        else if (currentCaffeine < 200)
+            status = "⚠️ Moderate Level";
+        else if (currentCaffeine < 400)
+            status = "⚠️ High Level";
+        else
+            status = "🚫 Very High!";
+        
+        caffeineStatusLabel.Text = $"Current Caffeine:\n{currentCaffeine:F0} mg\n\n{status}\n\nSafe limit: 400mg/day";
     }
     
     private Button CreateGameButton(string gameName, Color color)
