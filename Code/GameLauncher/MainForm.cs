@@ -18,6 +18,21 @@ public partial class MainForm : Form
         this.Resize += MainForm_Resize;
         this.DoubleBuffered = true;
         
+        // Set form icon from SVG
+        try
+        {
+            var logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "sprites", "project-logo.svg");
+            var icon = IconConverter.LoadIconFromSvg(logoPath, 64);
+            if (icon != null)
+            {
+                this.Icon = icon;
+            }
+        }
+        catch
+        {
+            // Icon loading failed, continue without custom icon
+        }
+        
         // Create menu strip
         var menuStrip = new MenuStrip();
         var fileMenu = new ToolStripMenuItem("File");
@@ -55,14 +70,28 @@ public partial class MainForm : Form
             // Keep default background color if image loading fails
         }
         
-        // Title label
+        // Title label with logo
+        var logoImage = AssetManager.LoadSvgAsImage("project-logo.svg", 64, 64);
+        if (logoImage != null)
+        {
+            var logoPictureBox = new PictureBox
+            {
+                Image = logoImage,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Size = new Size(64, 64),
+                Location = new Point(180, 40),
+                BackColor = Color.Transparent
+            };
+            mainPanel.Controls.Add(logoPictureBox);
+        }
+        
         var titleLabel = new Label
         {
             Text = "CoffeePause",
             Font = new Font("Segoe UI", 28, FontStyle.Bold),
             ForeColor = Color.FromArgb(74, 166, 186),
             AutoSize = true,
-            Location = new Point(250, 50)
+            Location = new Point(260, 50)
         };
         mainPanel.Controls.Add(titleLabel);
         
