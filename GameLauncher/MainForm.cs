@@ -15,6 +15,8 @@ public partial class MainForm : Form
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
         this.KeyDown += MainForm_KeyDown;
+        this.Resize += MainForm_Resize;
+        this.DoubleBuffered = true;
         
         // Create menu strip
         var menuStrip = new MenuStrip();
@@ -78,6 +80,7 @@ public partial class MainForm : Form
         // Game buttons panel
         var gamesPanel = new TableLayoutPanel
         {
+            Name = "gamesPanel",
             Location = new Point(150, 150),
             Size = new Size(500, 350),
             ColumnCount = 2,
@@ -172,6 +175,26 @@ public partial class MainForm : Form
         if (e.KeyCode == Keys.Escape)
         {
             Application.Exit();
+        }
+    }
+    
+    private void MainForm_Resize(object? sender, EventArgs e)
+    {
+        // Adjust layout on resize
+        int centerX = (this.ClientSize.Width - 500) / 2;
+        int centerY = (this.ClientSize.Height - 350) / 2;
+        
+        foreach (Control control in this.Controls)
+        {
+            if (control is Panel panel && panel.BackgroundImage != null)
+            {
+                // Skip panel adjustments - already docked
+                continue;
+            }
+            else if (control.Name == "gamesPanel" || control is TableLayoutPanel)
+            {
+                control.Location = new Point(Math.Max(10, centerX), Math.Max(150, centerY));
+            }
         }
     }
 }

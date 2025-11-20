@@ -29,6 +29,8 @@ public partial class MinesweeperForm : Form
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
         this.KeyDown += MinesweeperForm_KeyDown;
+        this.Resize += MinesweeperForm_Resize;
+        this.DoubleBuffered = true;
         
         UpdateFormSize();
         
@@ -92,6 +94,9 @@ public partial class MinesweeperForm : Form
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseClick += GamePanel_MouseClick;
+        typeof(Panel).InvokeMember("DoubleBuffered",
+            System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            null, gamePanel, new object[] { true });
         this.Controls.Add(gamePanel);
     }
     
@@ -454,6 +459,11 @@ public partial class MinesweeperForm : Form
         {
             this.Close();
         }
+    }
+    
+    private void MinesweeperForm_Resize(object? sender, EventArgs e)
+    {
+        // Fixed size game panel, no adjustment needed
     }
 }
 

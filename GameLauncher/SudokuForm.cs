@@ -28,6 +28,8 @@ public partial class SudokuForm : Form
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
         this.KeyDown += SudokuForm_KeyDown;
+        this.Resize += SudokuForm_Resize;
+        this.DoubleBuffered = true;
         
         // Game panel
         gamePanel = new Panel
@@ -39,6 +41,9 @@ public partial class SudokuForm : Form
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseClick += GamePanel_MouseClick;
+        typeof(Panel).InvokeMember("DoubleBuffered",
+            System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            null, gamePanel, new object[] { true });
         this.Controls.Add(gamePanel);
         
         // Instructions
@@ -393,5 +398,10 @@ public partial class SudokuForm : Form
         }
         
         MessageBox.Show(scoreText, "Scoreboard");
+    }
+    
+    private void SudokuForm_Resize(object? sender, EventArgs e)
+    {
+        // Fixed size game panel, no adjustment needed
     }
 }

@@ -18,6 +18,15 @@ public partial class SpiderSolitaireForm : Form
     private bool isDragging = false;
     private Point mouseDownPos;
     
+    // Animation fields
+    private System.Windows.Forms.Timer? animationTimer;
+    private List<Card>? animatingCards = null;
+    private Point animationStart;
+    private Point animationEnd;
+    private int animationFrame = 0;
+    private const int AnimationFrames = 15;
+    private int animationTargetColumn = -1;
+    
     private int suitCount = 1; // 1, 2, or 4 suits
     private int score = 0;
     private Panel? gamePanel;
@@ -38,6 +47,8 @@ public partial class SpiderSolitaireForm : Form
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
         this.KeyDown += SpiderSolitaireForm_KeyDown;
+        this.Resize += SpiderSolitaireForm_Resize;
+        this.DoubleBuffered = true;
         
         // Score label
         scoreLabel = new Label
@@ -61,6 +72,9 @@ public partial class SpiderSolitaireForm : Form
         gamePanel.MouseDown += GamePanel_MouseDown;
         gamePanel.MouseMove += GamePanel_MouseMove;
         gamePanel.MouseUp += GamePanel_MouseUp;
+        typeof(Panel).InvokeMember("DoubleBuffered",
+            System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            null, gamePanel, new object[] { true });
         this.Controls.Add(gamePanel);
         
         // Settings button
@@ -199,6 +213,10 @@ public partial class SpiderSolitaireForm : Form
                 if (draggedCard != null && isDragging && col == dragSourceColumn && i >= dragCardIndex)
                     continue;
                 
+                // Skip if animating and this is from the source column
+                if (animatingCards != null && col == dragSourceColumn && i >= dragCardIndex)
+                    continue;
+                
                 DrawCard(g, card, x, cardY);
                 
                 // Highlight selected cards in click-to-move mode
@@ -236,6 +254,21 @@ public partial class SpiderSolitaireForm : Form
                 var card = tableau[dragSourceColumn][i];
                 DrawCard(g, card, Cursor.Position.X - dragOffset.X - gamePanel!.Left - this.Left,
                     Cursor.Position.Y - dragOffset.Y - gamePanel.Top - this.Top + offsetY);
+                offsetY += CardOffset;
+            }
+        }
+        
+        // Draw animating cards
+        if (animatingCards != null && animationFrame > 0)
+        {
+            float t = (float)animationFrame / AnimationFrames;
+            int currentX = (int)(animationStart.X + (animationEnd.X - animationStart.X) * t);
+            int currentY = (int)(animationStart.Y + (animationEnd.Y - animationStart.Y) * t);
+            
+            int offsetY = 0;
+            foreach (var card in animatingCards)
+            {
+                DrawCard(g, card, currentX, currentY + offsetY);
                 offsetY += CardOffset;
             }
         }
@@ -367,7 +400,7 @@ public partial class SpiderSolitaireForm : Form
     {
         if (draggedCard == null) return;
         
-        // If we were dragging, handle as drag-and-drop
+        // If we were dragging, handle as drag-and-drop with animation
         if (isDragging)
         {
             // Find target column
@@ -379,7 +412,7 @@ public partial class SpiderSolitaireForm : Form
                 {
                     if (CanPlaceOnColumn(col, dragCardIndex))
                     {
-                        MoveCards(dragSourceColumn, dragCardIndex, col);
+                        AnimateMoveCards(dragSourceColumn, dragCardIndex, col);
                     }
                     break;
                 }
@@ -393,29 +426,17 @@ public partial class SpiderSolitaireForm : Form
         }
         else
         {
-            // Handle as click-to-move
-            // Find which column was clicked
-            for (int col = 0; col < tableau.Count; col++)
+            // Handle as auto-move: find the best valid destination
+            int bestColumn = FindBestMoveColumn(dragSourceColumn, dragCardIndex);
+            
+            if (bestColumn >= 0)
             {
-                int x = col * (CardWidth + 5) + 10;
-                int y = 10;
-                
-                // Check if clicking on the column area (not necessarily on a card)
-                if (e.X >= x && e.X <= x + CardWidth && e.Y >= y)
-                {
-                    if (col != dragSourceColumn && CanPlaceOnColumn(col, dragCardIndex))
-                    {
-                        MoveCards(dragSourceColumn, dragCardIndex, col);
-                        draggedCard = null;
-                        dragSourceColumn = -1;
-                        dragCardIndex = -1;
-                        gamePanel?.Invalidate();
-                        return;
-                    }
-                }
+                AnimateMoveCards(dragSourceColumn, dragCardIndex, bestColumn);
+                draggedCard = null;
+                dragSourceColumn = -1;
+                dragCardIndex = -1;
             }
             
-            // If we clicked somewhere invalid, just keep the selection highlighted
             gamePanel?.Invalidate();
         }
     }
@@ -441,6 +462,89 @@ public partial class SpiderSolitaireForm : Form
         
         score += 5;
         UpdateScore();
+    }
+    
+    private int FindBestMoveColumn(int fromCol, int cardIndex)
+    {
+        // Find the first valid column that can accept the cards
+        var movingCard = tableau[fromCol][cardIndex];
+        
+        for (int col = 0; col < tableau.Count; col++)
+        {
+            if (col == fromCol) continue;
+            
+            if (tableau[col].Count == 0)
+            {
+                // Prefer non-empty columns over empty ones
+                continue;
+            }
+            
+            var topCard = tableau[col][tableau[col].Count - 1];
+            if (topCard.Rank == movingCard.Rank + 1)
+            {
+                return col;
+            }
+        }
+        
+        // If no non-empty column works, try empty columns
+        for (int col = 0; col < tableau.Count; col++)
+        {
+            if (col == fromCol) continue;
+            if (tableau[col].Count == 0)
+            {
+                return col;
+            }
+        }
+        
+        return -1; // No valid move found
+    }
+    
+    private void AnimateMoveCards(int fromCol, int cardIndex, int toCol)
+    {
+        // Calculate start and end positions for animation
+        int startX = fromCol * (CardWidth + 5) + 10;
+        int startY = 10 + cardIndex * CardOffset;
+        
+        int endX = toCol * (CardWidth + 5) + 10;
+        int endY = 10 + tableau[toCol].Count * CardOffset;
+        
+        animationStart = new Point(startX, startY);
+        animationEnd = new Point(endX, endY);
+        animationFrame = 0;
+        animationTargetColumn = toCol;
+        
+        // Store cards to animate
+        animatingCards = tableau[fromCol].GetRange(cardIndex, tableau[fromCol].Count - cardIndex);
+        
+        // Start animation timer
+        if (animationTimer == null)
+        {
+            animationTimer = new System.Windows.Forms.Timer();
+            animationTimer.Interval = 16; // ~60 FPS
+            animationTimer.Tick += AnimationTimer_Tick;
+        }
+        animationTimer.Start();
+    }
+    
+    private void AnimationTimer_Tick(object? sender, EventArgs e)
+    {
+        animationFrame++;
+        
+        if (animationFrame >= AnimationFrames)
+        {
+            // Animation complete, perform the actual move
+            animationTimer?.Stop();
+            
+            if (animatingCards != null && animationTargetColumn >= 0)
+            {
+                MoveCards(dragSourceColumn, dragCardIndex, animationTargetColumn);
+            }
+            
+            animatingCards = null;
+            animationTargetColumn = -1;
+        }
+        
+        gamePanel?.Invalidate();
     }
     
     private bool CanPlaceOnColumn(int col, int cardIndex)
@@ -692,6 +796,18 @@ public partial class SpiderSolitaireForm : Form
         {
             this.Close();
         }
+    }
+    
+    private void SpiderSolitaireForm_Resize(object? sender, EventArgs e)
+    {
+        // Keep game panel fixed size, no adjustment needed
+    }
+    
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        animationTimer?.Stop();
+        animationTimer?.Dispose();
+        base.OnFormClosing(e);
     }
 }
 

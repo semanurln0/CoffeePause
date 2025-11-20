@@ -59,6 +59,8 @@ public partial class PacManForm : Form
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
         this.KeyDown += PacManForm_KeyDown;
+        this.Resize += PacManForm_Resize;
+        this.DoubleBuffered = true;
         
         // Game panel
         gamePanel = new Panel
@@ -69,6 +71,9 @@ public partial class PacManForm : Form
             BorderStyle = BorderStyle.FixedSingle
         };
         gamePanel.Paint += GamePanel_Paint;
+        typeof(Panel).InvokeMember("DoubleBuffered",
+            System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            null, gamePanel, new object[] { true });
         this.Controls.Add(gamePanel);
         
         // Score label
@@ -520,6 +525,15 @@ public partial class PacManForm : Form
         gameTimer?.Stop();
         gameTimer?.Dispose();
         base.OnFormClosing(e);
+    }
+    
+    private void PacManForm_Resize(object? sender, EventArgs e)
+    {
+        // Keep the game panel fixed size, but adjust side panel
+        if (scoreLabel != null)
+        {
+            scoreLabel.Location = new Point(GridWidth * CellSize + 30, 40);
+        }
     }
 }
 
