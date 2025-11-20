@@ -62,15 +62,7 @@ A collection of classic games built with .NET WinForms.
    ```
 
 3. **Run the application**
-   - Double-click `RunCoffeePause.bat`, or
    - Run `publish\GameLauncher.exe` directly
-
-4. **Create a desktop shortcut (optional)**
-   ```powershell
-   # Run in PowerShell
-   .\CreateShortcut.ps1
-   ```
-   Then move the `CoffeePause.lnk` file to your desktop.
 
 ### Development Build
 
@@ -119,9 +111,6 @@ CoffeePause/
 │   └── sprites/                   # SVG and image assets
 ├── publish/                       # Published executable (ignored by git)
 ├── CoffeePause.sln                # Solution file
-├── Build.bat                      # Build automation script
-├── CreateShortcut.ps1             # Shortcut creator script
-├── RunCoffeePause.bat             # Quick launch script
 └── README.md                      # This file
 ```
 
