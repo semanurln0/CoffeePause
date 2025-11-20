@@ -79,7 +79,7 @@ public partial class SpiderSolitaireForm : Form
             Size = new Size(860, 600),
             BackColor = Color.DarkGreen,
             BorderStyle = BorderStyle.FixedSingle,
-            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right // Solitaire can expand in all directions
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseDown += GamePanel_MouseDown;

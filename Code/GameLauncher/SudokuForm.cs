@@ -43,7 +43,7 @@ public partial class SudokuForm : Form
             Size = new Size(GridSize * CellSize, GridSize * CellSize),
             BackColor = Color.White,
             BorderStyle = BorderStyle.FixedSingle,
-            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left // Don't anchor right
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseClick += GamePanel_MouseClick;

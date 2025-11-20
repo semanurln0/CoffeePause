@@ -73,7 +73,7 @@ public partial class PacManForm : Form
             Size = new Size(GridWidth * CellSize, GridHeight * CellSize),
             BackColor = Color.Black,
             BorderStyle = BorderStyle.FixedSingle,
-            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left // Don't anchor right
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.Resize += (s, e) => gamePanel.Invalidate();
