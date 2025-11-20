@@ -13,6 +13,10 @@ public partial class SudokuForm : Form
     private Panel? gamePanel;
     private Point? selectedCell = null;
     private HighScoreManager scoreManager = new HighScoreManager();
+    private Label? instructLabel;
+    private Button? newPuzzleBtn;
+    private Button? checkBtn;
+    private Button? scoreboardBtn;
     
     public SudokuForm()
     {
@@ -47,7 +51,7 @@ public partial class SudokuForm : Form
         this.Controls.Add(gamePanel);
         
         // Instructions
-        var instructLabel = new Label
+        instructLabel = new Label
         {
             Location = new Point(GridSize * CellSize + 30, 40),
             Size = new Size(200, 100),
@@ -56,7 +60,7 @@ public partial class SudokuForm : Form
         this.Controls.Add(instructLabel);
         
         // New puzzle button
-        var newPuzzleBtn = new Button
+        newPuzzleBtn = new Button
         {
             Text = "New Puzzle",
             Location = new Point(GridSize * CellSize + 30, 150),
@@ -66,7 +70,7 @@ public partial class SudokuForm : Form
         this.Controls.Add(newPuzzleBtn);
         
         // Check button
-        var checkBtn = new Button
+        checkBtn = new Button
         {
             Text = "Check Solution",
             Location = new Point(GridSize * CellSize + 30, 190),
@@ -76,7 +80,7 @@ public partial class SudokuForm : Form
         this.Controls.Add(checkBtn);
         
         // Scoreboard button
-        var scoreboardBtn = new Button
+        scoreboardBtn = new Button
         {
             Text = "Scoreboard",
             Location = new Point(GridSize * CellSize + 30, 230),
@@ -402,6 +406,14 @@ public partial class SudokuForm : Form
     
     private void SudokuForm_Resize(object? sender, EventArgs e)
     {
-        // Fixed size game panel, no adjustment needed
+        // Update control positions when window is resized
+        if (gamePanel != null && instructLabel != null && newPuzzleBtn != null && checkBtn != null && scoreboardBtn != null)
+        {
+            int buttonX = gamePanel.Right + 20;
+            instructLabel.Location = new Point(buttonX, 40);
+            newPuzzleBtn.Location = new Point(buttonX, 150);
+            checkBtn.Location = new Point(buttonX, 190);
+            scoreboardBtn.Location = new Point(buttonX, 230);
+        }
     }
 }

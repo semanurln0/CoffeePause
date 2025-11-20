@@ -18,6 +18,9 @@ public partial class PacManForm : Form
     private HighScoreManager scoreManager = new HighScoreManager();
     private Panel? gamePanel;
     private Label? scoreLabel;
+    private Button? settingsBtn;
+    private Button? scoreboardBtn;
+    private Button? newGameBtn;
     
     // SVG Images
     private Image? pacmanImage;
@@ -87,7 +90,7 @@ public partial class PacManForm : Form
         this.Controls.Add(scoreLabel);
         
         // Settings button
-        var settingsBtn = new Button
+        settingsBtn = new Button
         {
             Text = "Settings",
             Location = new Point(GridWidth * CellSize + 30, 80),
@@ -97,7 +100,7 @@ public partial class PacManForm : Form
         this.Controls.Add(settingsBtn);
         
         // Scoreboard button
-        var scoreboardBtn = new Button
+        scoreboardBtn = new Button
         {
             Text = "Scoreboard",
             Location = new Point(GridWidth * CellSize + 30, 120),
@@ -107,7 +110,7 @@ public partial class PacManForm : Form
         this.Controls.Add(scoreboardBtn);
         
         // New game button
-        var newGameBtn = new Button
+        newGameBtn = new Button
         {
             Text = "New Game",
             Location = new Point(GridWidth * CellSize + 30, 160),
@@ -530,9 +533,13 @@ public partial class PacManForm : Form
     private void PacManForm_Resize(object? sender, EventArgs e)
     {
         // Keep the game panel fixed size, but adjust side panel
-        if (scoreLabel != null)
+        if (gamePanel != null && scoreLabel != null && settingsBtn != null && scoreboardBtn != null && newGameBtn != null)
         {
-            scoreLabel.Location = new Point(GridWidth * CellSize + 30, 40);
+            int buttonX = gamePanel.Right + 20;
+            scoreLabel.Location = new Point(buttonX, 40);
+            settingsBtn.Location = new Point(buttonX, 80);
+            scoreboardBtn.Location = new Point(buttonX, 120);
+            newGameBtn.Location = new Point(buttonX, 160);
         }
     }
 }

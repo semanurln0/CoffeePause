@@ -10,6 +10,9 @@ public partial class MinesweeperForm : Form
     private Cell[,]? cells;
     private Panel? gamePanel;
     private Label? statusLabel;
+    private Button? settingsBtn;
+    private Button? newGameBtn;
+    private Button? scoreboardBtn;
     private bool gameOver = false;
     private int flagsPlaced = 0;
     private int cellsRevealed = 0;
@@ -46,7 +49,7 @@ public partial class MinesweeperForm : Form
         // Game panel - will be created in UpdateFormSize
         
         // Settings button
-        var settingsBtn = new Button
+        settingsBtn = new Button
         {
             Text = "Settings",
             Location = new Point(gridWidth * CellSize + 30, 40),
@@ -56,7 +59,7 @@ public partial class MinesweeperForm : Form
         this.Controls.Add(settingsBtn);
         
         // New game button
-        var newGameBtn = new Button
+        newGameBtn = new Button
         {
             Text = "New Game",
             Location = new Point(gridWidth * CellSize + 30, 80),
@@ -66,7 +69,7 @@ public partial class MinesweeperForm : Form
         this.Controls.Add(newGameBtn);
         
         // Scoreboard button
-        var scoreboardBtn = new Button
+        scoreboardBtn = new Button
         {
             Text = "Scoreboard",
             Location = new Point(gridWidth * CellSize + 30, 120),
@@ -78,7 +81,7 @@ public partial class MinesweeperForm : Form
     
     private void UpdateFormSize()
     {
-        this.Size = new Size(gridWidth * CellSize + 250, gridHeight * CellSize + 100);
+        this.ClientSize = new Size(gridWidth * CellSize + 210, Math.Max(gridHeight * CellSize + 60, 250));
         
         if (gamePanel != null)
         {
@@ -98,6 +101,14 @@ public partial class MinesweeperForm : Form
             System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
             null, gamePanel, new object[] { true });
         this.Controls.Add(gamePanel);
+        
+        // Update button positions
+        if (settingsBtn != null)
+            settingsBtn.Location = new Point(gridWidth * CellSize + 30, 40);
+        if (newGameBtn != null)
+            newGameBtn.Location = new Point(gridWidth * CellSize + 30, 80);
+        if (scoreboardBtn != null)
+            scoreboardBtn.Location = new Point(gridWidth * CellSize + 30, 120);
     }
     
     private void InitializeGame()
@@ -463,7 +474,14 @@ public partial class MinesweeperForm : Form
     
     private void MinesweeperForm_Resize(object? sender, EventArgs e)
     {
-        // Fixed size game panel, no adjustment needed
+        // Update button positions when window is resized
+        if (gamePanel != null && settingsBtn != null && newGameBtn != null && scoreboardBtn != null)
+        {
+            int buttonX = gamePanel.Right + 20;
+            settingsBtn.Location = new Point(buttonX, 40);
+            newGameBtn.Location = new Point(buttonX, 80);
+            scoreboardBtn.Location = new Point(buttonX, 120);
+        }
     }
 }
 
