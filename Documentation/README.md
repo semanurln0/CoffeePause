@@ -56,13 +56,15 @@ A collection of classic games built with .NET WinForms.
    cd CoffeePause
    ```
 
-2. **Build and publish the application**
+2. **Build the application**
+   - Double-click `Build.bat`, or
+   - Run manually:
    ```bash
-   dotnet publish GameLauncher/GameLauncher.csproj -c Release -r win-x64 --self-contained false -o ./publish
+   dotnet publish Code/GameLauncher/GameLauncher.csproj -c Release -r win-x64 --self-contained false -o .
    ```
 
 3. **Run the application**
-   - Run `publish\GameLauncher.exe` directly
+   - Double-click `GameLauncher.exe` in the main folder
 
 ### Development Build
 
@@ -71,14 +73,14 @@ A collection of classic games built with .NET WinForms.
 dotnet build CoffeePause.sln
 
 # Run the application
-dotnet run --project GameLauncher/GameLauncher.csproj
+dotnet run --project Code/GameLauncher/GameLauncher.csproj
 ```
 
 ### Running Tests
 
 ```bash
 # Run all tests (Windows only - requires Windows Desktop runtime)
-dotnet test tests/GameLauncher.Tests/GameLauncher.Tests.csproj
+dotnet test Code/tests/GameLauncher.Tests/GameLauncher.Tests.csproj
 ```
 
 **Note**: Tests require Windows Desktop runtime and will not run on Linux/macOS build servers.
@@ -88,30 +90,33 @@ dotnet test tests/GameLauncher.Tests/GameLauncher.Tests.csproj
 If you want to run the application without installing .NET:
 
 ```bash
-dotnet publish GameLauncher/GameLauncher.csproj -c Release -r win-x64 --self-contained true -o ./publish-standalone
+dotnet publish Code/GameLauncher/GameLauncher.csproj -c Release -r win-x64 --self-contained true -o .
 ```
 
 ## Project Structure
 
 ```
 CoffeePause/
-├── GameLauncher/
-│   ├── Program.cs                 # Application entry point
-│   ├── MainForm.cs                # Main menu
-│   ├── AssetManager.cs            # SVG asset loading
-│   ├── HighScoreManager.cs        # Score persistence
-│   ├── PacManForm.cs              # Pac-Man game
-│   ├── SudokuForm.cs              # Sudoku game
-│   ├── MinesweeperForm.cs         # Minesweeper game
-│   └── SpiderSolitaireForm.cs     # Spider Solitaire game
-├── tests/
-│   └── GameLauncher.Tests/
-│       └── HighScoreManagerTests.cs  # Score persistence tests
-├── assets/
-│   └── sprites/                   # SVG and image assets
-├── publish/                       # Published executable (ignored by git)
+├── Build.bat                      # Build script (outputs to main folder)
+├── GameLauncher.exe               # Game executable (after build)
 ├── CoffeePause.sln                # Solution file
-└── README.md                      # This file
+├── Code/
+│   ├── GameLauncher/              # Game source code
+│   │   ├── Program.cs             # Application entry point
+│   │   ├── MainForm.cs            # Main menu
+│   │   ├── AssetManager.cs        # SVG asset loading
+│   │   ├── HighScoreManager.cs    # Score persistence
+│   │   ├── PacManForm.cs          # Pac-Man game
+│   │   ├── SudokuForm.cs          # Sudoku game
+│   │   ├── MinesweeperForm.cs     # Minesweeper game
+│   │   └── SpiderSolitaireForm.cs # Spider Solitaire game
+│   └── tests/
+│       └── GameLauncher.Tests/
+│           └── HighScoreManagerTests.cs  # Score persistence tests
+├── Assets/
+│   └── sprites/                   # SVG and image assets
+└── Documentation/
+    └── README.md                  # This file
 ```
 
 ## Testing
