@@ -82,6 +82,7 @@ public partial class MinesweeperForm : Form
     private void UpdateFormSize()
     {
         this.ClientSize = new Size(gridWidth * CellSize + 210, Math.Max(gridHeight * CellSize + 60, 250));
+        this.MinimumSize = new Size(gridWidth * CellSize + 210, Math.Max(gridHeight * CellSize + 60, 250));
         
         if (gamePanel != null)
         {
@@ -93,22 +94,33 @@ public partial class MinesweeperForm : Form
             Location = new Point(10, 40),
             Size = new Size(gridWidth * CellSize, gridHeight * CellSize),
             BackColor = Color.LightGray,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseClick += GamePanel_MouseClick;
+        gamePanel.Resize += (s, e) => gamePanel.Invalidate();
         typeof(Panel).InvokeMember("DoubleBuffered",
             System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
             null, gamePanel, new object[] { true });
         this.Controls.Add(gamePanel);
         
-        // Update button positions
+        // Update button positions with anchoring
         if (settingsBtn != null)
+        {
             settingsBtn.Location = new Point(gridWidth * CellSize + 30, 40);
+            settingsBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        }
         if (newGameBtn != null)
+        {
             newGameBtn.Location = new Point(gridWidth * CellSize + 30, 80);
+            newGameBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        }
         if (scoreboardBtn != null)
+        {
             scoreboardBtn.Location = new Point(gridWidth * CellSize + 30, 120);
+            scoreboardBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        }
     }
     
     private void InitializeGame()
@@ -474,14 +486,9 @@ public partial class MinesweeperForm : Form
     
     private void MinesweeperForm_Resize(object? sender, EventArgs e)
     {
-        // Update button positions when window is resized
-        if (gamePanel != null && settingsBtn != null && newGameBtn != null && scoreboardBtn != null)
-        {
-            int buttonX = gamePanel.Right + 20;
-            settingsBtn.Location = new Point(buttonX, 40);
-            newGameBtn.Location = new Point(buttonX, 80);
-            scoreboardBtn.Location = new Point(buttonX, 120);
-        }
+        // Game panel automatically resizes via Anchor property
+        // Just refresh the display
+        gamePanel?.Invalidate();
     }
 }
 

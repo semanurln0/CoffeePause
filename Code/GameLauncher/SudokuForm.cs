@@ -28,6 +28,7 @@ public partial class SudokuForm : Form
     {
         this.Text = "Sudoku";
         this.Size = new Size(GridSize * CellSize + 250, GridSize * CellSize + 100);
+        this.MinimumSize = new Size(GridSize * CellSize + 250, GridSize * CellSize + 100);
         this.StartPosition = FormStartPosition.CenterScreen;
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
@@ -41,10 +42,12 @@ public partial class SudokuForm : Form
             Location = new Point(10, 40),
             Size = new Size(GridSize * CellSize, GridSize * CellSize),
             BackColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
         gamePanel.Paint += GamePanel_Paint;
         gamePanel.MouseClick += GamePanel_MouseClick;
+        gamePanel.Resize += (s, e) => gamePanel.Invalidate();
         typeof(Panel).InvokeMember("DoubleBuffered",
             System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
             null, gamePanel, new object[] { true });
@@ -55,7 +58,8 @@ public partial class SudokuForm : Form
         {
             Location = new Point(GridSize * CellSize + 30, 40),
             Size = new Size(200, 100),
-            Text = "Click cell, then:\nNumber: Enter value\n(blue)\n\nCtrl + Number:\nDraft (red)\n\nBackspace: Clear"
+            Text = "Click cell, then:\nNumber: Enter value\n(blue)\n\nCtrl + Number:\nDraft (red)\n\nBackspace: Clear",
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         this.Controls.Add(instructLabel);
         
@@ -64,7 +68,8 @@ public partial class SudokuForm : Form
         {
             Text = "New Puzzle",
             Location = new Point(GridSize * CellSize + 30, 150),
-            Size = new Size(150, 30)
+            Size = new Size(150, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         newPuzzleBtn.Click += (s, e) => GenerateNewPuzzle();
         this.Controls.Add(newPuzzleBtn);
@@ -74,7 +79,8 @@ public partial class SudokuForm : Form
         {
             Text = "Check Solution",
             Location = new Point(GridSize * CellSize + 30, 190),
-            Size = new Size(150, 30)
+            Size = new Size(150, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         checkBtn.Click += CheckSolution;
         this.Controls.Add(checkBtn);
@@ -84,7 +90,8 @@ public partial class SudokuForm : Form
         {
             Text = "Scoreboard",
             Location = new Point(GridSize * CellSize + 30, 230),
-            Size = new Size(150, 30)
+            Size = new Size(150, 30),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
         };
         scoreboardBtn.Click += ShowScoreboard;
         this.Controls.Add(scoreboardBtn);
@@ -406,14 +413,7 @@ public partial class SudokuForm : Form
     
     private void SudokuForm_Resize(object? sender, EventArgs e)
     {
-        // Update control positions when window is resized
-        if (gamePanel != null && instructLabel != null && newPuzzleBtn != null && checkBtn != null && scoreboardBtn != null)
-        {
-            int buttonX = gamePanel.Right + 20;
-            instructLabel.Location = new Point(buttonX, 40);
-            newPuzzleBtn.Location = new Point(buttonX, 150);
-            checkBtn.Location = new Point(buttonX, 190);
-            scoreboardBtn.Location = new Point(buttonX, 230);
-        }
+        // Game panel automatically resizes via Anchor property
+        gamePanel?.Invalidate();
     }
 }
