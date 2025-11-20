@@ -19,12 +19,36 @@ public partial class PacManForm : Form
     private Panel? gamePanel;
     private Label? scoreLabel;
     
+    // SVG Images
+    private Image? pacmanImage;
+    private Image? foodDotImage;
+    private Image? powerPelletImage;
+    private Image? ghostRedImage;
+    private Image? ghostVulnerableImage;
+    
     // Grid values: 0=empty, 1=food, 2=supreme food, 3=wall
     
     public PacManForm()
     {
         InitializeComponent();
+        LoadAssets();
         InitializeGame();
+    }
+    
+    private void LoadAssets()
+    {
+        try
+        {
+            pacmanImage = AssetManager.LoadSvgAsImage("pacman-character.svg", CellSize - 6, CellSize - 6);
+            foodDotImage = AssetManager.LoadSvgAsImage("pacman-food_dot.svg", 6, 6);
+            powerPelletImage = AssetManager.LoadSvgAsImage("pacman-strawberry.svg", 14, 14);
+            ghostRedImage = AssetManager.LoadSvgAsImage("pacman-ghost_red_normal.svg", CellSize - 6, CellSize - 6);
+            ghostVulnerableImage = AssetManager.LoadSvgAsImage("pacman-ghost_blue_vulnerable.svg", CellSize - 6, CellSize - 6);
+        }
+        catch
+        {
+            // Assets will fall back to default rendering if loading fails
+        }
     }
     
     private void InitializeComponent()
@@ -32,8 +56,7 @@ public partial class PacManForm : Form
         this.Text = "Pac-Man";
         this.Size = new Size(GridWidth * CellSize + 250, GridHeight * CellSize + 100);
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.FormBorderStyle = FormBorderStyle.FixedDialog;
-        this.MaximizeBox = false;
+        this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
         this.KeyDown += PacManForm_KeyDown;
         
@@ -296,6 +319,9 @@ public partial class PacManForm : Form
     {
         switch (e.KeyCode)
         {
+            case Keys.Escape:
+                this.Close();
+                break;
             case Keys.Up:
             case Keys.W:
                 pacmanDir = Direction.Up;
@@ -332,10 +358,24 @@ public partial class PacManForm : Form
                         g.FillRectangle(Brushes.Blue, rect);
                         break;
                     case 1: // Food
-                        g.FillEllipse(Brushes.White, x * CellSize + 12, y * CellSize + 12, 6, 6);
+                        if (foodDotImage != null)
+                        {
+                            g.DrawImage(foodDotImage, x * CellSize + 12, y * CellSize + 12, 6, 6);
+                        }
+                        else
+                        {
+                            g.FillEllipse(Brushes.White, x * CellSize + 12, y * CellSize + 12, 6, 6);
+                        }
                         break;
                     case 2: // Supreme food
-                        g.FillEllipse(Brushes.Yellow, x * CellSize + 8, y * CellSize + 8, 14, 14);
+                        if (powerPelletImage != null)
+                        {
+                            g.DrawImage(powerPelletImage, x * CellSize + 8, y * CellSize + 8, 14, 14);
+                        }
+                        else
+                        {
+                            g.FillEllipse(Brushes.Yellow, x * CellSize + 8, y * CellSize + 8, 14, 14);
+                        }
                         break;
                 }
             }
@@ -343,16 +383,34 @@ public partial class PacManForm : Form
         
         // Draw Pac-Man
         var pacmanRect = new Rectangle(pacmanPos.X * CellSize + 3, pacmanPos.Y * CellSize + 3, CellSize - 6, CellSize - 6);
-        g.FillEllipse(Brushes.Yellow, pacmanRect);
+        if (pacmanImage != null)
+        {
+            g.DrawImage(pacmanImage, pacmanRect);
+        }
+        else
+        {
+            g.FillEllipse(Brushes.Yellow, pacmanRect);
+        }
         
         // Draw ghosts
         foreach (var ghost in ghosts)
         {
             var ghostRect = new Rectangle(ghost.Position.X * CellSize + 3, ghost.Position.Y * CellSize + 3, CellSize - 6, CellSize - 6);
-            var ghostColor = ghostsVulnerable ? Color.Blue : ghost.Color;
-            using (var brush = new SolidBrush(ghostColor))
+            if (ghostsVulnerable && ghostVulnerableImage != null)
             {
-                g.FillEllipse(brush, ghostRect);
+                g.DrawImage(ghostVulnerableImage, ghostRect);
+            }
+            else if (!ghostsVulnerable && ghostRedImage != null)
+            {
+                g.DrawImage(ghostRedImage, ghostRect);
+            }
+            else
+            {
+                var ghostColor = ghostsVulnerable ? Color.Blue : ghost.Color;
+                using (var brush = new SolidBrush(ghostColor))
+                {
+                    g.FillEllipse(brush, ghostRect);
+                }
             }
         }
     }

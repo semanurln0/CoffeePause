@@ -12,8 +12,9 @@ public partial class MainForm : Form
         this.Text = "CoffeePause - Game Launcher";
         this.Size = new Size(800, 600);
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.FormBorderStyle = FormBorderStyle.FixedSingle;
-        this.MaximizeBox = false;
+        this.FormBorderStyle = FormBorderStyle.Sizable;
+        this.KeyPreview = true;
+        this.KeyDown += MainForm_KeyDown;
         
         // Create menu strip
         var menuStrip = new MenuStrip();
@@ -39,6 +40,18 @@ public partial class MainForm : Form
             BackColor = Color.FromArgb(245, 245, 245),
             Padding = new Padding(20)
         };
+        
+        // Load and set background image
+        try
+        {
+            var backgroundImage = AssetManager.LoadImage("main-menu-background.jpg");
+            mainPanel.BackgroundImage = backgroundImage;
+            mainPanel.BackgroundImageLayout = ImageLayout.Stretch;
+        }
+        catch
+        {
+            // Keep default background color if image loading fails
+        }
         
         // Title label
         var titleLabel = new Label
@@ -152,5 +165,13 @@ public partial class MainForm : Form
             MessageBoxButtons.OK,
             MessageBoxIcon.Information
         );
+    }
+    
+    private void MainForm_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Escape)
+        {
+            Application.Exit();
+        }
     }
 }

@@ -25,8 +25,7 @@ public partial class SudokuForm : Form
         this.Text = "Sudoku";
         this.Size = new Size(GridSize * CellSize + 250, GridSize * CellSize + 100);
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.FormBorderStyle = FormBorderStyle.FixedDialog;
-        this.MaximizeBox = false;
+        this.FormBorderStyle = FormBorderStyle.Sizable;
         this.KeyPreview = true;
         this.KeyDown += SudokuForm_KeyDown;
         
@@ -224,6 +223,12 @@ public partial class SudokuForm : Form
     
     private void SudokuForm_KeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.KeyCode == Keys.Escape)
+        {
+            this.Close();
+            return;
+        }
+        
         if (selectedCell == null) return;
         
         int row = selectedCell.Value.Y;

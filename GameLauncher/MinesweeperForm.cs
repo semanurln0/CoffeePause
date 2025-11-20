@@ -26,8 +26,9 @@ public partial class MinesweeperForm : Form
     {
         this.Text = "Minesweeper";
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.FormBorderStyle = FormBorderStyle.FixedDialog;
-        this.MaximizeBox = false;
+        this.FormBorderStyle = FormBorderStyle.Sizable;
+        this.KeyPreview = true;
+        this.KeyDown += MinesweeperForm_KeyDown;
         
         UpdateFormSize();
         
@@ -445,6 +446,14 @@ public partial class MinesweeperForm : Form
         }
         
         MessageBox.Show(scoreText, "Scoreboard");
+    }
+    
+    private void MinesweeperForm_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Escape)
+        {
+            this.Close();
+        }
     }
 }
 
