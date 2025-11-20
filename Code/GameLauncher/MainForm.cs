@@ -70,6 +70,9 @@ public partial class MainForm : Form
             // Keep default background color if image loading fails
         }
         
+        // Calculate initial center position
+        int formCenterX = this.ClientSize.Width / 2;
+        
         // Title label with logo
         var logoImage = AssetManager.LoadSvgAsImage("project-logo.svg", 64, 64);
         if (logoImage != null)
@@ -79,7 +82,7 @@ public partial class MainForm : Form
                 Image = logoImage,
                 SizeMode = PictureBoxSizeMode.Zoom,
                 Size = new Size(64, 64),
-                Location = new Point(180, 40),
+                Location = new Point(formCenterX - 150, 40),
                 BackColor = Color.Transparent
             };
             mainPanel.Controls.Add(logoPictureBox);
@@ -91,18 +94,18 @@ public partial class MainForm : Form
             Font = new Font("Segoe UI", 28, FontStyle.Bold),
             ForeColor = Color.FromArgb(74, 166, 186),
             AutoSize = true,
-            Location = new Point(260, 50)
+            Location = new Point(formCenterX - 80, 50)
         };
         mainPanel.Controls.Add(titleLabel);
         
         // Subtitle
         var subtitleLabel = new Label
         {
-            Text = "Select a game to play",
+            Text = "Choose Game",
             Font = new Font("Segoe UI", 12),
             ForeColor = Color.Gray,
             AutoSize = true,
-            Location = new Point(300, 100)
+            Location = new Point(formCenterX - 50, 100)
         };
         mainPanel.Controls.Add(subtitleLabel);
         
@@ -110,7 +113,7 @@ public partial class MainForm : Form
         var gamesPanel = new TableLayoutPanel
         {
             Name = "gamesPanel",
-            Location = new Point(150, 150),
+            Location = new Point((this.ClientSize.Width - 500) / 2, 150),
             Size = new Size(500, 350),
             ColumnCount = 2,
             RowCount = 2,
@@ -192,7 +195,8 @@ public partial class MainForm : Form
             "- Sudoku\n" +
             "- Minesweeper\n" +
             "- Spider Solitaire\n\n" +
-            "Version 1.0",
+            "Version 1.0\n\n" +
+            "For help, contact: semanurln0.code@gmail.com",
             "About CoffeePause",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information
@@ -209,20 +213,71 @@ public partial class MainForm : Form
     
     private void MainForm_Resize(object? sender, EventArgs e)
     {
-        // Adjust layout on resize
-        int centerX = (this.ClientSize.Width - 500) / 2;
-        int centerY = (this.ClientSize.Height - 350) / 2;
+        // Find the main panel and games panel
+        Panel? mainPanel = null;
+        TableLayoutPanel? gamesPanel = null;
+        PictureBox? logoPictureBox = null;
+        Label? titleLabel = null;
+        Label? subtitleLabel = null;
         
         foreach (Control control in this.Controls)
         {
             if (control is Panel panel && panel.BackgroundImage != null)
             {
-                // Skip panel adjustments - already docked
-                continue;
+                mainPanel = panel;
+                break;
             }
-            else if (control.Name == "gamesPanel" || control is TableLayoutPanel)
+        }
+        
+        if (mainPanel != null)
+        {
+            foreach (Control control in mainPanel.Controls)
             {
-                control.Location = new Point(Math.Max(10, centerX), Math.Max(150, centerY));
+                if (control.Name == "gamesPanel" || control is TableLayoutPanel)
+                {
+                    gamesPanel = control as TableLayoutPanel;
+                }
+                else if (control is PictureBox)
+                {
+                    logoPictureBox = control as PictureBox;
+                }
+                else if (control is Label label)
+                {
+                    if (label.Text == "CoffeePause")
+                    {
+                        titleLabel = label;
+                    }
+                    else if (label.Text == "Choose Game")
+                    {
+                        subtitleLabel = label;
+                    }
+                }
+            }
+            
+            // Center the games panel
+            if (gamesPanel != null)
+            {
+                int centerX = (this.ClientSize.Width - gamesPanel.Width) / 2;
+                int centerY = (this.ClientSize.Height - gamesPanel.Height) / 2 + 20;
+                gamesPanel.Location = new Point(Math.Max(10, centerX), Math.Max(150, centerY));
+            }
+            
+            // Reposition title elements based on new center
+            int formCenterX = this.ClientSize.Width / 2;
+            
+            if (logoPictureBox != null)
+            {
+                logoPictureBox.Location = new Point(formCenterX - 150, 40);
+            }
+            
+            if (titleLabel != null)
+            {
+                titleLabel.Location = new Point(formCenterX - 80, 50);
+            }
+            
+            if (subtitleLabel != null)
+            {
+                subtitleLabel.Location = new Point(formCenterX - subtitleLabel.Width / 2, 100);
             }
         }
     }

@@ -26,6 +26,8 @@ public partial class SpiderSolitaireForm : Form
     private int animationFrame = 0;
     private const int AnimationFrames = 15;
     private int animationTargetColumn = -1;
+    private int animationSourceColumn = -1;
+    private int animationSourceCardIndex = -1;
     
     private int suitCount = 1; // 1, 2, or 4 suits
     private int score = 0;
@@ -214,7 +216,7 @@ public partial class SpiderSolitaireForm : Form
                     continue;
                 
                 // Skip if animating and this is from the source column
-                if (animatingCards != null && col == dragSourceColumn && i >= dragCardIndex)
+                if (animatingCards != null && col == animationSourceColumn && i >= animationSourceCardIndex)
                     continue;
                 
                 DrawCard(g, card, x, cardY);
@@ -512,6 +514,8 @@ public partial class SpiderSolitaireForm : Form
         animationEnd = new Point(endX, endY);
         animationFrame = 0;
         animationTargetColumn = toCol;
+        animationSourceColumn = fromCol;
+        animationSourceCardIndex = cardIndex;
         
         // Store cards to animate
         animatingCards = tableau[fromCol].GetRange(cardIndex, tableau[fromCol].Count - cardIndex);
@@ -535,13 +539,15 @@ public partial class SpiderSolitaireForm : Form
             // Animation complete, perform the actual move
             animationTimer?.Stop();
             
-            if (animatingCards != null && animationTargetColumn >= 0)
+            if (animatingCards != null && animationTargetColumn >= 0 && animationSourceColumn >= 0 && animationSourceCardIndex >= 0)
             {
-                MoveCards(dragSourceColumn, dragCardIndex, animationTargetColumn);
+                MoveCards(animationSourceColumn, animationSourceCardIndex, animationTargetColumn);
             }
             
             animatingCards = null;
             animationTargetColumn = -1;
+            animationSourceColumn = -1;
+            animationSourceCardIndex = -1;
         }
         
         gamePanel?.Invalidate();
