@@ -15,6 +15,8 @@ public partial class SpiderSolitaireForm : Form
     private Point dragOffset;
     private int dragSourceColumn = -1;
     private int dragCardIndex = -1;
+    private bool isDragging = false;
+    private Point mouseDownPos;
     
     private int suitCount = 1; // 1, 2, or 4 suits
     private int score = 0;
@@ -33,8 +35,9 @@ public partial class SpiderSolitaireForm : Form
         this.Text = "Spider Solitaire";
         this.Size = new Size(900, 700);
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.FormBorderStyle = FormBorderStyle.FixedDialog;
-        this.MaximizeBox = false;
+        this.FormBorderStyle = FormBorderStyle.Sizable;
+        this.KeyPreview = true;
+        this.KeyDown += SpiderSolitaireForm_KeyDown;
         
         // Score label
         scoreLabel = new Label
@@ -192,11 +195,20 @@ public partial class SpiderSolitaireForm : Form
                 var card = tableau[col][i];
                 int cardY = y + i * CardOffset;
                 
-                // Skip if this is the dragged card
-                if (draggedCard != null && col == dragSourceColumn && i >= dragCardIndex)
+                // Skip if this is the dragged card during dragging
+                if (draggedCard != null && isDragging && col == dragSourceColumn && i >= dragCardIndex)
                     continue;
                 
                 DrawCard(g, card, x, cardY);
+                
+                // Highlight selected cards in click-to-move mode
+                if (draggedCard != null && !isDragging && col == dragSourceColumn && i >= dragCardIndex)
+                {
+                    using (var pen = new Pen(Color.Yellow, 3))
+                    {
+                        g.DrawRectangle(pen, x, cardY, CardWidth, CardHeight);
+                    }
+                }
             }
         }
         
@@ -215,8 +227,8 @@ public partial class SpiderSolitaireForm : Form
             g.DrawString($"Complete {i + 1}", new Font("Arial", 8), Brushes.White, x + 5, 510);
         }
         
-        // Draw dragged card(s)
-        if (draggedCard != null && dragSourceColumn >= 0 && dragCardIndex >= 0)
+        // Draw dragged card(s) - only during dragging
+        if (draggedCard != null && isDragging && dragSourceColumn >= 0 && dragCardIndex >= 0)
         {
             int offsetY = 0;
             for (int i = dragCardIndex; i < tableau[dragSourceColumn].Count; i++)
@@ -271,6 +283,9 @@ public partial class SpiderSolitaireForm : Form
     {
         if (e.Button != MouseButtons.Left) return;
         
+        mouseDownPos = e.Location;
+        isDragging = false;
+        
         // Check if clicking on stock
         if (e.X >= 10 && e.X <= 10 + CardWidth && e.Y >= 500 && e.Y <= 500 + CardHeight / 2 && stock.Count > 0)
         {
@@ -293,11 +308,25 @@ public partial class SpiderSolitaireForm : Form
                     var card = tableau[col][i];
                     if (card.FaceUp && CanMoveSequence(col, i))
                     {
-                        draggedCard = card;
-                        dragSourceColumn = col;
-                        dragCardIndex = i;
-                        dragOffset = new Point(e.X - x, e.Y - cardY);
-                        SaveGameState();
+                        // Check if this is a click on an already selected card
+                        if (draggedCard != null && dragSourceColumn == col && dragCardIndex == i)
+                        {
+                            // Deselect
+                            draggedCard = null;
+                            dragSourceColumn = -1;
+                            dragCardIndex = -1;
+                            gamePanel?.Invalidate();
+                        }
+                        else
+                        {
+                            // Select card for click-to-move or drag
+                            draggedCard = card;
+                            dragSourceColumn = col;
+                            dragCardIndex = i;
+                            dragOffset = new Point(e.X - x, e.Y - cardY);
+                            if (draggedCard != null)
+                                SaveGameState();
+                        }
                     }
                     return;
                 }
@@ -319,9 +348,18 @@ public partial class SpiderSolitaireForm : Form
     
     private void GamePanel_MouseMove(object? sender, MouseEventArgs e)
     {
-        if (draggedCard != null)
+        if (draggedCard != null && e.Button == MouseButtons.Left)
         {
-            gamePanel?.Invalidate();
+            // Check if mouse has moved enough to initiate drag
+            if (!isDragging && Math.Abs(e.X - mouseDownPos.X) + Math.Abs(e.Y - mouseDownPos.Y) > 5)
+            {
+                isDragging = true;
+            }
+            
+            if (isDragging)
+            {
+                gamePanel?.Invalidate();
+            }
         }
     }
     
@@ -329,42 +367,80 @@ public partial class SpiderSolitaireForm : Form
     {
         if (draggedCard == null) return;
         
-        // Find target column
-        for (int col = 0; col < tableau.Count; col++)
+        // If we were dragging, handle as drag-and-drop
+        if (isDragging)
         {
-            int x = col * (CardWidth + 5) + 10;
-            
-            if (e.X >= x && e.X <= x + CardWidth)
+            // Find target column
+            for (int col = 0; col < tableau.Count; col++)
             {
-                if (CanPlaceOnColumn(col, dragCardIndex))
+                int x = col * (CardWidth + 5) + 10;
+                
+                if (e.X >= x && e.X <= x + CardWidth)
                 {
-                    // Move cards
-                    var cardsToMove = tableau[dragSourceColumn].GetRange(dragCardIndex,
-                        tableau[dragSourceColumn].Count - dragCardIndex);
-                    tableau[dragSourceColumn].RemoveRange(dragCardIndex,
-                        tableau[dragSourceColumn].Count - dragCardIndex);
-                    tableau[col].AddRange(cardsToMove);
-                    
-                    // Flip top card if needed
-                    if (tableau[dragSourceColumn].Count > 0 &&
-                        !tableau[dragSourceColumn][tableau[dragSourceColumn].Count - 1].FaceUp)
+                    if (CanPlaceOnColumn(col, dragCardIndex))
                     {
-                        tableau[dragSourceColumn][tableau[dragSourceColumn].Count - 1].FaceUp = true;
+                        MoveCards(dragSourceColumn, dragCardIndex, col);
                     }
-                    
-                    // Check for completed sequences
-                    CheckForCompletedSequences();
-                    
-                    score += 5;
-                    UpdateScore();
+                    break;
                 }
             }
+            
+            draggedCard = null;
+            dragSourceColumn = -1;
+            dragCardIndex = -1;
+            isDragging = false;
+            gamePanel?.Invalidate();
+        }
+        else
+        {
+            // Handle as click-to-move
+            // Find which column was clicked
+            for (int col = 0; col < tableau.Count; col++)
+            {
+                int x = col * (CardWidth + 5) + 10;
+                int y = 10;
+                
+                // Check if clicking on the column area (not necessarily on a card)
+                if (e.X >= x && e.X <= x + CardWidth && e.Y >= y)
+                {
+                    if (col != dragSourceColumn && CanPlaceOnColumn(col, dragCardIndex))
+                    {
+                        MoveCards(dragSourceColumn, dragCardIndex, col);
+                        draggedCard = null;
+                        dragSourceColumn = -1;
+                        dragCardIndex = -1;
+                        gamePanel?.Invalidate();
+                        return;
+                    }
+                }
+            }
+            
+            // If we clicked somewhere invalid, just keep the selection highlighted
+            gamePanel?.Invalidate();
+        }
+    }
+    
+    private void MoveCards(int fromCol, int cardIndex, int toCol)
+    {
+        // Move cards
+        var cardsToMove = tableau[fromCol].GetRange(cardIndex,
+            tableau[fromCol].Count - cardIndex);
+        tableau[fromCol].RemoveRange(cardIndex,
+            tableau[fromCol].Count - cardIndex);
+        tableau[toCol].AddRange(cardsToMove);
+        
+        // Flip top card if needed
+        if (tableau[fromCol].Count > 0 &&
+            !tableau[fromCol][tableau[fromCol].Count - 1].FaceUp)
+        {
+            tableau[fromCol][tableau[fromCol].Count - 1].FaceUp = true;
         }
         
-        draggedCard = null;
-        dragSourceColumn = -1;
-        dragCardIndex = -1;
-        gamePanel?.Invalidate();
+        // Check for completed sequences
+        CheckForCompletedSequences();
+        
+        score += 5;
+        UpdateScore();
     }
     
     private bool CanPlaceOnColumn(int col, int cardIndex)
@@ -608,6 +684,14 @@ public partial class SpiderSolitaireForm : Form
         }
         
         MessageBox.Show(scoreText, "Scoreboard");
+    }
+    
+    private void SpiderSolitaireForm_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Escape)
+        {
+            this.Close();
+        }
     }
 }
 
