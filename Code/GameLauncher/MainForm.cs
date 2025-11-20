@@ -167,7 +167,7 @@ public partial class MainForm : Form
         // Panel width is 280, with 20 margin from right edge
         int panelWidth = 280;
         int rightMargin = 20;
-        int xPosition = this.ClientSize.Width - panelWidth - rightMargin;
+        int xPosition = InitialWidth - panelWidth - rightMargin;
         
         var panel = new Panel
         {
