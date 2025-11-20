@@ -156,6 +156,7 @@ public partial class MainForm : Form
         // Add caffeine tracker panel on the right
         var caffeinePanel = CreateCaffeineTrackerPanel();
         mainPanel.Controls.Add(caffeinePanel);
+        caffeinePanel.BringToFront(); // Ensure it's visible on top
         
         this.Controls.Add(mainPanel);
     }
