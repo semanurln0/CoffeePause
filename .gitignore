@@ -482,3 +482,15 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Published files in main directory
+/*.exe
+/*.dll
+/*.pdb
+/*.json
+/*.config
+/*.deps.json
+/*.runtimeconfig.json
+/assets/
+/runtimes/
+/ref/
